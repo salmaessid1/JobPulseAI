@@ -19,6 +19,11 @@ app = FastAPI(
     version="1.0.0"
 )
 init_db()
+# Pré-charger les données en mémoire au démarrage
+from app.utils.data_loader import load_postings
+print("🔥 Pré-chargement des données...")
+load_postings(nrows=3000)
+print("✅ Données pré-chargées en mémoire")
 app.include_router(history.router)
 app.include_router(chatbot.router)
 # CORS

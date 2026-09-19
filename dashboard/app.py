@@ -478,7 +478,7 @@ apply_css(st.session_state.dark_mode)
 # ============================================================
 import subprocess
 
-def _fetch_silent(endpoint, timeout=6):
+def _fetch_silent(endpoint, timeout=30):
     """Appelle l'API via curl.exe (contourne les problèmes de proxy)."""
     try:
         url = f"{API_BASE_URL}{endpoint}"

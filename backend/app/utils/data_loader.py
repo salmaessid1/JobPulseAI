@@ -1,13 +1,15 @@
 # backend/app/utils/data_loader.py
 """
-Utilitaire pour charger les données avec fallback pour le cloud.
-Cherche le fichier dans data/raw, data/processed, puis data/samples.
+Charge les données avec cache en mémoire et fallback pour le cloud.
 """
 import os
 import pandas as pd
 from typing import Optional
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+
+# Cache global
+_CACHE = {}
 
 
 def get_data_path() -> Optional[str]:
@@ -24,17 +26,35 @@ def get_data_path() -> Optional[str]:
 
 
 def load_postings(nrows: int = None, low_memory: bool = False) -> pd.DataFrame:
-    """Charge les offres avec fallback automatique."""
+    """
+    Charge les offres avec CACHE EN MÉMOIRE.
+    Le premier appel est lent, les suivants sont instantanés.
+    """
+    cache_key = f"postings_{nrows}"
+
+    # Si déjà en cache, retourner directement
+    if cache_key in _CACHE:
+        return _CACHE[cache_key]
+
     path = get_data_path()
     if path is None:
         print("⚠️ Aucun fichier de données trouvé")
-        return pd.DataFrame()
-    
-    print(f"📂 Chargement depuis : {path}")
+        _CACHE[cache_key] = pd.DataFrame()
+        return _CACHE[cache_key]
+
+    print(f"📂 Chargement initial depuis : {path}")
     try:
         df = pd.read_csv(path, nrows=nrows, low_memory=low_memory)
-        print(f"✅ {len(df)} offres chargées")
+        print(f"✅ {len(df)} offres chargées et mises en cache")
+        _CACHE[cache_key] = df
         return df
     except Exception as e:
         print(f"❌ Erreur de chargement : {e}")
-        return pd.DataFrame()
+        _CACHE[cache_key] = pd.DataFrame()
+        return _CACHE[cache_key]
+
+
+def clear_cache():
+    """Vide le cache."""
+    _CACHE.clear()
+    print("🧹 Cache vidé")
