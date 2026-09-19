@@ -17,7 +17,7 @@ data/raw/*.csv
 data/raw/*.zip
 data/processed/*.csv
 
-# Modèles (optionnel - commentez si vous voulez les inclure)
+# Modèles
 models/*.pkl
 
 # Flutter
