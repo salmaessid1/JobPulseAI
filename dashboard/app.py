@@ -46,7 +46,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # ============================================================
 # CONFIGURATION & THÈME
 # ============================================================
-API_BASE_URL = "http://127.0.0.1:8000"
+API_BASE_URL = st.secrets.get("API_BASE_URL", os.getenv("API_BASE_URL", "http://127.0.0.1:8000"))
 APP_VERSION = "5.2"
 
 
