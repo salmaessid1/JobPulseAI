@@ -536,31 +536,31 @@ def api_call(method, endpoint, **kwargs):
         st.error(f"❌ Erreur : {e}")
         return None
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=60, show_spinner=False)
 def get_global_stats():
     return _fetch_silent("/stats/global")
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=60, show_spinner=False)
 def get_top_skills(limit=10):
     return _fetch_silent(f"/stats/skills/top?limit={limit}")
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=60, show_spinner=False)
 def get_salary_distribution():
     return _fetch_silent("/stats/salary/distribution")
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=60, show_spinner=False)
 def get_top_companies(limit=10):
     return _fetch_silent(f"/stats/companies/top?limit={limit}")
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=60, show_spinner=False)
 def get_top_jobs(limit=10):
     return _fetch_silent(f"/stats/jobs/top?limit={limit}")
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=60, show_spinner=False)
 def get_experience_levels():
     return _fetch_silent("/stats/experience/levels")
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=60, show_spinner=False)
 def get_market_overview():
     endpoints = {
         "companies": "/stats/companies/top?limit=10",
