@@ -47,17 +47,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # CONFIGURATION & THÈME
 # ============================================================
 # Lecture robuste du secret (compatible toutes versions Streamlit)
-try:
-    API_BASE_URL = st.secrets["API_BASE_URL"]
-    print(f"✅ Secret lu : {API_BASE_URL}")
-except (KeyError, FileNotFoundError):
-    API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
-    print(f"⚠️ Pas de secret, utilisation : {API_BASE_URL}")
-
-# Sécurité : forcer Render si on est sur Streamlit Cloud
-if "127.0.0.1" in API_BASE_URL and os.getenv("STREAMLIT_SHARING_MODE") is not None:
-    API_BASE_URL = "https://jobpulseai-ux5q.onrender.com"
-    print(f"🔧 Forcé sur Render : {API_BASE_URL}")
+# ⚠️ URL FORCÉE EN DUR (solution définitive)
+API_BASE_URL = "https://jobpulseai-ux5q.onrender.com"
+print(f"🔗 API_BASE_URL = {API_BASE_URL}")
 APP_VERSION = "5.2"
 
 
