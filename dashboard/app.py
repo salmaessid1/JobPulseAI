@@ -482,25 +482,34 @@ apply_css(st.session_state.dark_mode)
 import subprocess
 
 def _fetch_silent(endpoint, timeout=30):
-    """Appelle l'API via curl.exe (contourne les problèmes de proxy)."""
+    """Appelle l'API via requests (compatible Windows ET Linux/Streamlit Cloud)."""
     try:
         url = f"{API_BASE_URL}{endpoint}"
-        result = subprocess.run(
-            ["curl.exe", "-s", "-m", str(timeout), url],
-            capture_output=True,
-            text=True,
-            timeout=timeout + 2,
+        print(f"🔵 GET {url}")
+        # proxies=None désactive tout proxy système (comme le fait curl)
+        resp = requests.get(
+            url,
+            timeout=timeout,
+            proxies={"http": None, "https": None},
+            headers={"User-Agent": "JobPulseAI/5.2"},
         )
-        if result.returncode != 0:
-            print(f"🔴 curl erreur [{endpoint}] : {result.stderr}")
-            return None
-        data = result.stdout.strip()
-        if not data:
-            return None
-        return json.loads(data)
+        print(f"✅ {resp.status_code} - {endpoint}")
+        resp.raise_for_status()
+        return resp.json()
+    except requests.exceptions.Timeout:
+        print(f"⏱️ Timeout sur {endpoint} après {timeout}s")
+        return None
+    except requests.exceptions.ConnectionError as e:
+        print(f"🔴 Connexion échouée sur {endpoint} : {e}")
+        return None
+    except requests.exceptions.HTTPError as e:
+        print(f"🔴 HTTP {e.response.status_code} sur {endpoint}")
+        return None
     except Exception as e:
         print(f"🔴 _fetch_silent [{endpoint}] : {type(e).__name__} - {e}")
         return None
+
+
 
 def api_call(method, endpoint, **kwargs):
     url = f"{API_BASE_URL}{endpoint}"
