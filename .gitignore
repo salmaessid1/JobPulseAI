@@ -39,3 +39,7 @@ Thumbs.db
 
 # Notebooks
 .ipynb_checkpoints/
+
+# Autoriser les échantillons (nécessaires pour le cloud)
+!data/samples/
+!data/samples/*.csv
