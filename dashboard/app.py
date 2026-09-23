@@ -331,7 +331,7 @@ def apply_css(dark=True):
         ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
         ::-webkit-scrollbar-thumb {{ background: var(--border-strong); border-radius: 8px; }}
         ::-webkit-scrollbar-track {{ background: transparent; }}
-
+        
         .stApp {{
             background:
                 radial-gradient(900px 480px at 12% -8%, rgba(139,92,255,0.18), transparent 60%),
@@ -600,10 +600,77 @@ def apply_css(dark=True):
             border-radius: var(--radius-md) !important;
             padding: 1rem !important;
         }}
-    </style>
-    """, unsafe_allow_html=True)
+            /* ============================================================
+           CHATBOT PREMIUM
+           ============================================================ */
+        .stChatMessage {{
+            background: var(--surface-solid) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 16px !important;
+            padding: 1rem 1.2rem !important;
+            margin-bottom: 0.5rem !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+            animation: fadeIn 0.3s ease;
+        }}
 
+        .stChatInputContainer {{
+            border-radius: 12px !important;
+            border: 1px solid var(--border-strong) !important;
+            background: var(--surface-solid) !important;
+        }}
+
+        .stChatInputContainer:focus-within {{
+            border-color: var(--accent-1) !important;
+            box-shadow: 0 0 0 3px rgba(139,92,246,0.15) !important;
+        }}
+
+        @keyframes fadeIn {{
+            from {{ opacity: 0; transform: translateY(10px); }}
+            to {{ opacity: 1; transform: translateY(0); }}
+        }}
+
+        /* Tabs styling */
+        .stTabs [data-baseweb="tab-list"] {{
+            gap: 4px;
+            background: var(--surface-2);
+            padding: 4px;
+            border-radius: 12px;
+        }}
+
+        .stTabs [data-baseweb="tab"] {{
+            border-radius: 8px !important;
+            padding: 6px 12px !important;
+            font-size: 0.82rem !important;
+            font-weight: 600 !important;
+        }}
+
+        .stTabs [aria-selected="true"] {{
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2)) !important;
+            color: white !important;
+        }}
+
+        /* Boutons suggestion */
+        .stButton > button[kind="secondary"] {{
+            background: var(--surface-2) !important;
+            color: var(--text-1) !important;
+            border: 1px solid var(--border) !important;
+            font-size: 0.78rem !important;
+            padding: 0.5rem 0.8rem !important;
+            text-align: left !important;
+            transition: all 0.2s !important;
+        }}
+
+        .stButton > button[kind="secondary"]:hover {{
+            background: var(--surface-solid) !important;
+            border-color: var(--accent-1) !important;
+            transform: translateX(4px);
+        }}
+    </style>
+        
+    """, unsafe_allow_html=True)
+    
 apply_css(st.session_state.dark_mode)
+
 # ============================================================
 # APPLICATION DU THÈME ACCENT DYNAMIQUE
 # ============================================================
@@ -615,6 +682,7 @@ st.markdown(f"""
         --accent-2: {theme['secondary']} !important;
     }}
 </style>
+
 """, unsafe_allow_html=True)
 
 # ============================================================
@@ -1940,64 +2008,213 @@ def get_response(question, profile=None):
 def page_assistant():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
     st.markdown(f'<div class="main-header">{tr("assistant_title")}</div>', unsafe_allow_html=True)
-    st.write("Posez vos questions sur les métiers, les compétences, les formations...")
 
-    # Vérifier le statut du LLM
+    # ============================================================
+    # EN-TÊTE : Statut IA + Actions
+    # ============================================================
     llm_status = api_call("GET", "/chatbot/status")
-    if llm_status and llm_status.get("available"):
-        st.markdown(f"""
-        <div style="background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(34,197,94,0.05));
-                    border:1px solid rgba(34,197,94,0.3); border-radius:10px; padding:0.6rem 1rem; margin-bottom:1rem;">
-            <div style="display:flex; align-items:center; gap:0.5rem;">
-                <span style="font-size:1.2rem;">🟢</span>
-                <span style="font-weight:600; color:var(--success);">IA activée</span>
-                <span style="color:var(--text-3); font-size:0.85rem;">
-                    — {llm_status.get('provider', 'LLM')} · {llm_status.get('model', '')}
-                </span>
+    is_ia_active = llm_status and llm_status.get("available")
+
+    col_status, col_actions = st.columns([3, 1])
+
+    with col_status:
+        if is_ia_active:
+            model_name = llm_status.get('model', 'LLM')
+            provider = llm_status.get('provider', 'IA')
+            st.markdown(f"""
+            <div style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(34,197,94,0.05));
+                        border:1px solid rgba(34,197,94,0.4); border-radius:12px; padding:0.7rem 1.2rem;
+                        display:flex; align-items:center; gap:0.8rem; margin-bottom:0.5rem;">
+                <div style="position:relative;">
+                    <span style="font-size:1.5rem;">🤖</span>
+                    <span style="position:absolute; bottom:2px; right:0; width:10px; height:10px;
+                         background:#22c55e; border-radius:50%; border:2px solid var(--surface-solid);
+                         animation:pulse 2s infinite;"></span>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-weight:700; color:var(--success); font-size:0.95rem;">
+                        🟢 Assistant IA actif
+                    </div>
+                    <div style="color:var(--text-3); font-size:0.75rem;">
+                        {provider} · {model_name}
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:0.7rem; color:var(--text-3);">Réponses</div>
+                    <div style="font-weight:700; font-size:1.1rem;">
+                        {len([m for m in st.session_state.chat_history if m[0] == 'assistant'])}
+                    </div>
+                </div>
             </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.warning("ℹ️ Mode démo — réponses prédéfinies. Configurez GROQ_API_KEY pour l'IA complète.")
+
+    with col_actions:
+        if st.button("🗑️ Nouvelle conversation", use_container_width=True, key="new_conv"):
+            st.session_state.chat_history = []
+            st.session_state.pop("chat_feedback", None)
+            st.rerun()
+
+    # ============================================================
+    # CONTEXTE CV (si chargé)
+    # ============================================================
+    profile = st.session_state.cv_profile
+    if profile:
+        name = profile.get('name', 'Vous')
+        nb_skills = len(profile.get('skills', []))
+        st.markdown(f"""
+        <div style="background:var(--surface-2); border-left:3px solid var(--accent-1);
+                    border-radius:8px; padding:0.5rem 0.8rem; margin-bottom:0.8rem;
+                    font-size:0.8rem; color:var(--text-2);">
+            🎯 <b>Contexte personnel activé</b> — Le chatbot connaît votre profil : 
+            <b>{name}</b> · {nb_skills} compétences
         </div>
         """, unsafe_allow_html=True)
-    else:
-        st.info("ℹ️ Mode démo : réponses prédéfinies. Configurez `GROQ_API_KEY` pour activer l'IA complète.")
 
-    # Initialiser l'historique
+    # ============================================================
+    # INITIALISATION
+    # ============================================================
+    if "chat_feedback" not in st.session_state:
+        st.session_state.chat_feedback = {}
+
     if not st.session_state.chat_history:
-        welcome = "Bonjour ! 👋 Je suis **JobPulseAI**, votre assistant carrière intelligent. Posez-moi n'importe quelle question sur les métiers, compétences, salaires, CV, entretiens..."
+        welcome = """Bonjour ! 👋 Je suis **JobPulseAI**, votre assistant carrière intelligent.
+
+Je peux vous aider sur :
+- 🎯 Les **compétences** à acquérir
+- 💰 Les **salaires** par métier
+- 📄 L'optimisation de votre **CV**
+- 🎤 La préparation aux **entretiens**
+- 🚀 Les **métiers** de la Data & Tech
+- 🎓 Les **formations** et certifications
+
+**Posez-moi n'importe quelle question !** Je réponds avec l'IA la plus récente."""
         st.session_state.chat_history = [("assistant", welcome)]
 
-    # Afficher les messages
-    for role, msg in st.session_state.chat_history:
-        with st.chat_message(role if role == "user" else "assistant"):
-            st.markdown(msg)
+    # ============================================================
+    # AFFICHAGE DE L'HISTORIQUE
+    # ============================================================
+    for idx, (role, msg) in enumerate(st.session_state.chat_history):
+        if role == "user":
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(msg)
+        else:
+            with st.chat_message("assistant", avatar="🤖"):
+                st.markdown(msg)
+                
+                # Boutons d'action sous chaque réponse assistant (sauf la première)
+                if idx > 0:
+                    col1, col2, col3 = st.columns([1, 1, 8])
+                    with col1:
+                        # Bouton Copier
+                        if st.button("📋", key=f"copy_{idx}", help="Copier la réponse"):
+                            st.toast("✅ Réponse copiée !", icon="📋")
+                    with col2:
+                        # Feedback
+                        fb = st.session_state.chat_feedback.get(idx, None)
+                        if fb is None:
+                            if st.button("👍", key=f"like_{idx}", help="Bonne réponse"):
+                                st.session_state.chat_feedback[idx] = "like"
+                                st.toast("Merci pour votre retour ! 👍", icon="✅")
+                                st.rerun()
+                        else:
+                            st.caption("👍" if fb == "like" else "👎")
 
-    # Suggestions rapides
+    # ============================================================
+    # SUGGESTIONS CATÉGORISÉES
+    # ============================================================
+    st.markdown("---")
     st.markdown("### 💡 Suggestions")
-    suggestions = [
-        "Quelles compétences pour devenir Data Scientist ?",
-        "Comment améliorer mon CV ?",
-        "Quel salaire pour un ML Engineer ?",
-        "Comment préparer un entretien technique ?",
-        "Quelles formations suivre en 2026 ?",
-        "Conseils personnalisés pour mon profil",
-    ]
-    cols = st.columns(3)
-    for i, sugg in enumerate(suggestions):
-        with cols[i % 3]:
-            if st.button(sugg, key=f"sugg_{i}", use_container_width=True):
-                st.session_state.chat_history.append(("user", sugg))
-                with st.spinner("🤔 Réflexion..."):
-                    response, _ = get_response(sugg, profile=st.session_state.cv_profile)
-                st.session_state.chat_history.append(("assistant", response))
-                st.rerun()
 
-    # Zone de saisie
-    user_input = st.chat_input("Votre question...")
+    # Catégories
+    tabs = st.tabs(["🎯 Compétences", "💰 Salaire", "📄 CV", "🎤 Entretien", "🚀 Carrière"])
+
+    suggestions_by_cat = {
+        0: [
+            "Quelles compétences pour devenir Data Scientist ?",
+            "Comment apprendre le Machine Learning ?",
+            "Python ou R : que choisir ?",
+        ],
+        1: [
+            "Quel salaire pour un ML Engineer ?",
+            "Comment négocier mon salaire ?",
+            "Quel salaire pour un Data Engineer junior ?",
+        ],
+        2: [
+            "Comment améliorer mon CV ?",
+            "Quelles compétences mettre en avant ?",
+            "Comment structurer une lettre de motivation ?",
+        ],
+        3: [
+            "Comment préparer un entretien technique ?",
+            "Quelles questions poser en entretien ?",
+            "Comment répondre à 'parlez-moi de vous' ?",
+        ],
+        4: [
+            "Data Scientist ou ML Engineer ?",
+            "Comment passer de Data Analyst à Data Scientist ?",
+            "Quelles certifications valent le coup ?",
+        ],
+    }
+
+    for tab_idx, tab in enumerate(tabs):
+        with tab:
+            cols = st.columns(3)
+            for i, sugg in enumerate(suggestions_by_cat[tab_idx]):
+                with cols[i % 3]:
+                    if st.button(sugg, key=f"sugg_{tab_idx}_{i}", use_container_width=True):
+                        st.session_state.chat_history.append(("user", sugg))
+                        with st.spinner("🤔 Réflexion..."):
+                            result = chatbot_api(
+                                question=sugg,
+                                profile=st.session_state.cv_profile,
+                                history=[
+                                    {"role": r, "content": m}
+                                    for r, m in st.session_state.chat_history[-6:]
+                                ]
+                            )
+                            response = result.get("response", "Erreur") if result else "Erreur"
+                        st.session_state.chat_history.append(("assistant", response))
+                        st.rerun()
+
+    # ============================================================
+    # ZONE DE SAISIE
+    # ============================================================
+    user_input = st.chat_input("💬 Posez votre question à l'IA...")
     if user_input:
         st.session_state.chat_history.append(("user", user_input))
-        with st.spinner("🤔 Réflexion..."):
-            response, _ = get_response(user_input, profile=st.session_state.cv_profile)
+        with st.spinner("🤔 L'IA réfléchit..."):
+            result = chatbot_api(
+                question=user_input,
+                profile=st.session_state.cv_profile,
+                history=[
+                    {"role": r, "content": m}
+                    for r, m in st.session_state.chat_history[-6:]
+                ]
+            )
+            response = result.get("response", "Erreur") if result else "Erreur"
         st.session_state.chat_history.append(("assistant", response))
         st.rerun()
+
+    # ============================================================
+    # EXPORT DE LA CONVERSATION
+    # ============================================================
+    if len(st.session_state.chat_history) > 2:
+        st.markdown("---")
+        col1, col2 = st.columns([3, 1])
+        with col2:
+            chat_text = "\n\n".join([
+                f"{'👤 Vous' if r == 'user' else '🤖 JobPulseAI'} :\n{m}"
+                for r, m in st.session_state.chat_history
+            ])
+            st.download_button(
+                "📥 Exporter la conversation",
+                data=chat_text,
+                file_name=f"chat_jobpulseai_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                mime="text/plain",
+                use_container_width=True,
+            )
 
 def page_rapport():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
