@@ -727,7 +727,7 @@ def get_market_overview():
 
 
     
-@st.cache_data(ttl=15, show_spinner=False)# rafraîchissement toutes les 15 secondes maximum.
+@st.cache_data(ttl=120, show_spinner=False)# rafraîchissement toutes les 15 secondes maximum.
 def get_realtime_snapshot():
     """Récupère un snapshot temps réel (stats + notifications + activité)."""
     return _fetch_silent("/stats/realtime/snapshot")
@@ -1100,9 +1100,9 @@ with st.sidebar:
     page_labels = [tr("page_home"), tr("page_market"), tr("page_cv"),
                    tr("page_matching"), tr("page_recommendations"), tr("page_salary"),
                    tr("page_comparator"), tr("page_career"), tr("page_assistant"), tr("page_report")]
-    pages_internal = ["🏠 Accueil", "📄 CV", "🤝 Matching",
-                      "🎯 Recommandations", "💰 Salaire", "📊 Comparateur", 
-                      "📊 Analyse carrière", "🤖 Assistant", "📄 Rapport"]
+    pages_internal = ["🏠 Accueil", "📈 Marché", "📄 CV",
+                      "🤝 Matching", "🎯 Recommandations", "💰 Salaire",
+                      "📊 Comparateur", "📊 Analyse carrière", "🤖 Assistant", "📄 Rapport"]
     current_idx = pages_internal.index(st.session_state.current_page) if st.session_state.current_page in pages_internal else 0
     selected_label = st.radio("Navigation", page_labels, index=current_idx,
                               label_visibility="collapsed", key="nav_radio")
@@ -1922,52 +1922,80 @@ def page_analyse_carriere():
     st.plotly_chart(style_fig(fig), use_container_width=True)
 
 def get_response(question, profile=None):
+    """Appelle l'API chatbot intelligente."""
     payload = {
         "question": question,
         "profile": profile if profile else None,
-        "history": [{"role": r, "content": m} for r, m in st.session_state.chat_history[-5:]]
+        "history": [
+            {"role": r, "content": m}
+            for r, m in st.session_state.chat_history[-6:]
+        ]
     }
     result = api_call("POST", "/chatbot/", json=payload)
     if result and "response" in result:
-        return result["response"]
-    return "⚠️ Erreur du chatbot"
+        return result["response"], result.get("llm_enabled", False)
+    return "⚠️ Erreur du chatbot. Vérifiez que l'API est en ligne.", False
+
 
 def page_assistant():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
     st.markdown(f'<div class="main-header">{tr("assistant_title")}</div>', unsafe_allow_html=True)
-    st.markdown('<div class="main-header">🤖 Assistant carrière</div>', unsafe_allow_html=True)
     st.write("Posez vos questions sur les métiers, les compétences, les formations...")
 
+    # Vérifier le statut du LLM
+    llm_status = api_call("GET", "/chatbot/status")
+    if llm_status and llm_status.get("available"):
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(34,197,94,0.05));
+                    border:1px solid rgba(34,197,94,0.3); border-radius:10px; padding:0.6rem 1rem; margin-bottom:1rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span style="font-size:1.2rem;">🟢</span>
+                <span style="font-weight:600; color:var(--success);">IA activée</span>
+                <span style="color:var(--text-3); font-size:0.85rem;">
+                    — {llm_status.get('provider', 'LLM')} · {llm_status.get('model', '')}
+                </span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.info("ℹ️ Mode démo : réponses prédéfinies. Configurez `GROQ_API_KEY` pour activer l'IA complète.")
+
+    # Initialiser l'historique
     if not st.session_state.chat_history:
-        welcome = "Bonjour ! Je suis votre assistant carrière. Posez-moi une question ou cliquez sur une suggestion ci-dessous."
+        welcome = "Bonjour ! 👋 Je suis **JobPulseAI**, votre assistant carrière intelligent. Posez-moi n'importe quelle question sur les métiers, compétences, salaires, CV, entretiens..."
         st.session_state.chat_history = [("assistant", welcome)]
 
+    # Afficher les messages
     for role, msg in st.session_state.chat_history:
         with st.chat_message(role if role == "user" else "assistant"):
             st.markdown(msg)
 
+    # Suggestions rapides
     st.markdown("### 💡 Suggestions")
-    cols = st.columns(3)
     suggestions = [
-        "Quelles compétences sont les plus demandées ?",
+        "Quelles compétences pour devenir Data Scientist ?",
         "Comment améliorer mon CV ?",
-        "Quel salaire pour un Data Scientist ?",
-        "Quelles formations suivre ?",
-        "Quels métiers dans la Data ?",
-        "Conseils personnalisés pour moi"
+        "Quel salaire pour un ML Engineer ?",
+        "Comment préparer un entretien technique ?",
+        "Quelles formations suivre en 2026 ?",
+        "Conseils personnalisés pour mon profil",
     ]
+    cols = st.columns(3)
     for i, sugg in enumerate(suggestions):
         with cols[i % 3]:
-            if st.button(sugg, key=f"sugg_{i}"):
-                response = get_response(sugg, profile=st.session_state.cv_profile)
+            if st.button(sugg, key=f"sugg_{i}", use_container_width=True):
                 st.session_state.chat_history.append(("user", sugg))
+                with st.spinner("🤔 Réflexion..."):
+                    response, _ = get_response(sugg, profile=st.session_state.cv_profile)
                 st.session_state.chat_history.append(("assistant", response))
                 st.rerun()
 
+    # Zone de saisie
     user_input = st.chat_input("Votre question...")
     if user_input:
-        response = get_response(user_input, profile=st.session_state.cv_profile)
         st.session_state.chat_history.append(("user", user_input))
+        with st.spinner("🤔 Réflexion..."):
+            response, _ = get_response(user_input, profile=st.session_state.cv_profile)
         st.session_state.chat_history.append(("assistant", response))
         st.rerun()
 

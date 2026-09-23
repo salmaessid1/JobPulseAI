@@ -1,8 +1,12 @@
 # backend/app/routes/chatbot.py
+"""
+Routes du chatbot intelligent.
+"""
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List, Dict
-from app.services.chatbot_service import get_chatbot_response, is_llm_available
+
+from app.services.chatbot_service import get_chatbot_response, get_llm_status
 
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
 
@@ -26,7 +30,7 @@ class ChatResponse(BaseModel):
 
 @router.post("/", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """Chatbot carrière avec LLM."""
+    """Chatbot carrière intelligent avec LLM."""
     try:
         history = [msg.dict() for msg in request.history] if request.history else []
         result = get_chatbot_response(
@@ -42,7 +46,4 @@ async def chat(request: ChatRequest):
 @router.get("/status")
 async def chatbot_status():
     """Statut du chatbot (LLM activé ou non)."""
-    return {
-        "llm_enabled": is_llm_available(),
-        "provider": "OpenAI" if is_llm_available() else "Fallback (réponses prédéfinies)",
-    }
+    return get_llm_status()
