@@ -67,6 +67,8 @@ defaults = {
     "search_query": "",
     "notifications_count": 0,
     "recent_actions": [],
+        "conversations": {},          
+    "current_conv_id": None,      # ID de la conversation active
 }
 
 for k, v in defaults.items():
@@ -2005,216 +2007,323 @@ def get_response(question, profile=None):
     return "⚠️ Erreur du chatbot. Vérifiez que l'API est en ligne.", False
 
 
+
+import uuid
+
+def create_new_conversation():
+    """Crée une nouvelle conversation vide."""
+    conv_id = str(uuid.uuid4())[:8]
+    st.session_state.conversations[conv_id] = {
+        "title": "Nouvelle conversation",
+        "messages": [],
+        "pinned": False,
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat(),
+    }
+    st.session_state.current_conv_id = conv_id
+    return conv_id
+
+
+def get_current_conversation():
+    """Retourne la conversation active."""
+    cid = st.session_state.current_conv_id
+    if cid and cid in st.session_state.conversations:
+        return st.session_state.conversations[cid]
+    return None
+
+
+def add_message_to_current(role, content):
+    """Ajoute un message à la conversation active."""
+    conv = get_current_conversation()
+    if conv is None:
+        create_new_conversation()
+        conv = get_current_conversation()
+    
+    conv["messages"].append({"role": role, "content": content, "ts": datetime.now().isoformat()})
+    conv["updated_at"] = datetime.now().isoformat()
+    
+    # Auto-générer le titre à partir du premier message utilisateur
+    if len(conv["messages"]) == 1 and role == "user":
+        conv["title"] = content[:35] + ("..." if len(content) > 35 else "")
+
+
+def delete_conversation(conv_id):
+    """Supprime une conversation."""
+    if conv_id in st.session_state.conversations:
+        del st.session_state.conversations[conv_id]
+        if st.session_state.current_conv_id == conv_id:
+            st.session_state.current_conv_id = None
+
+
+def toggle_pin(conv_id):
+    """Épingle/désépingle une conversation."""
+    if conv_id in st.session_state.conversations:
+        st.session_state.conversations[conv_id]["pinned"] = not st.session_state.conversations[conv_id]["pinned"]
+
+
+def rename_conversation(conv_id, new_title):
+    """Renomme une conversation."""
+    if conv_id in st.session_state.conversations:
+        st.session_state.conversations[conv_id]["title"] = new_title[:50]
+
 def page_assistant():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-    st.markdown(f'<div class="main-header">{tr("assistant_title")}</div>', unsafe_allow_html=True)
 
     # ============================================================
-    # EN-TÊTE : Statut IA + Actions
+    # INIT : Créer une conversation si aucune n'existe
+    # ============================================================
+    if not st.session_state.conversations:
+        create_new_conversation()
+
+    if st.session_state.current_conv_id is None:
+        # Prendre la plus récente
+        latest = max(st.session_state.conversations.items(),
+                     key=lambda x: x[1]["updated_at"])
+        st.session_state.current_conv_id = latest[0]
+
+    # ============================================================
+    # CSS POUR CHATGPT-LIKE
+    # ============================================================
+    st.markdown("""
+    <style>
+        /* Zone conversation scrollable */
+        .chat-container {
+            max-height: 55vh;
+            overflow-y: auto;
+            padding: 1rem;
+            border-radius: 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
+        
+        /* Historique sidebar */
+        .conv-item {
+            background: var(--surface-solid);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.6rem 0.8rem;
+            margin-bottom: 0.4rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .conv-item:hover {
+            background: var(--surface-2);
+            border-color: var(--accent-1);
+        }
+        .conv-item.active {
+            background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(236,72,153,0.1));
+            border-color: var(--accent-1);
+        }
+        .conv-item.pinned {
+            border-left: 3px solid var(--accent-2);
+        }
+        .conv-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-1);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .conv-date {
+            font-size: 0.68rem;
+            color: var(--text-3);
+            margin-top: 0.2rem;
+        }
+        
+        /* Sticky input */
+        .stChatInputContainer {
+            position: sticky;
+            bottom: 0;
+            z-index: 100;
+            background: var(--surface-solid);
+            padding: 0.5rem;
+            border-radius: 12px;
+            border: 2px solid var(--accent-1) !important;
+            box-shadow: 0 -4px 20px rgba(139,92,246,0.2);
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ============================================================
+    # EN-TÊTE
     # ============================================================
     llm_status = api_call("GET", "/chatbot/status")
     is_ia_active = llm_status and llm_status.get("available")
 
-    col_status, col_actions = st.columns([3, 1])
+    col_title, col_status, col_new = st.columns([2, 2, 1])
+
+    with col_title:
+        st.markdown(f'<div style="font-size:1.5rem; font-weight:700;">🤖 Assistant IA</div>',
+                    unsafe_allow_html=True)
 
     with col_status:
         if is_ia_active:
-            model_name = llm_status.get('model', 'LLM')
-            provider = llm_status.get('provider', 'IA')
             st.markdown(f"""
-            <div style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(34,197,94,0.05));
-                        border:1px solid rgba(34,197,94,0.4); border-radius:12px; padding:0.7rem 1.2rem;
-                        display:flex; align-items:center; gap:0.8rem; margin-bottom:0.5rem;">
-                <div style="position:relative;">
-                    <span style="font-size:1.5rem;">🤖</span>
-                    <span style="position:absolute; bottom:2px; right:0; width:10px; height:10px;
-                         background:#22c55e; border-radius:50%; border:2px solid var(--surface-solid);
-                         animation:pulse 2s infinite;"></span>
-                </div>
-                <div style="flex:1;">
-                    <div style="font-weight:700; color:var(--success); font-size:0.95rem;">
-                        🟢 Assistant IA actif
-                    </div>
-                    <div style="color:var(--text-3); font-size:0.75rem;">
-                        {provider} · {model_name}
-                    </div>
-                </div>
-                <div style="text-align:right;">
-                    <div style="font-size:0.7rem; color:var(--text-3);">Réponses</div>
-                    <div style="font-weight:700; font-size:1.1rem;">
-                        {len([m for m in st.session_state.chat_history if m[0] == 'assistant'])}
-                    </div>
-                </div>
+            <div style="background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.4);
+                        border-radius:8px; padding:0.4rem 0.8rem; font-size:0.75rem;
+                        display:inline-block; margin-top:0.3rem;">
+                <span style="display:inline-block; width:8px; height:8px; background:#22c55e;
+                     border-radius:50%; margin-right:6px; animation:pulse 2s infinite;"></span>
+                <b style="color:var(--success);">IA active</b>
+                <span style="color:var(--text-3);"> · {llm_status.get('model', 'LLM')}</span>
             </div>
             """, unsafe_allow_html=True)
         else:
-            st.warning("ℹ️ Mode démo — réponses prédéfinies. Configurez GROQ_API_KEY pour l'IA complète.")
+            st.caption("⚠️ Mode démo")
 
-    with col_actions:
-        if st.button("🗑️ Nouvelle conversation", use_container_width=True, key="new_conv"):
-            st.session_state.chat_history = []
-            st.session_state.pop("chat_feedback", None)
+    with col_new:
+        if st.button("＋ Nouveau", key="new_conv_btn", use_container_width=True):
+            create_new_conversation()
             st.rerun()
 
-    # ============================================================
-    # CONTEXTE CV (si chargé)
-    # ============================================================
-    profile = st.session_state.cv_profile
-    if profile:
-        name = profile.get('name', 'Vous')
-        nb_skills = len(profile.get('skills', []))
-        st.markdown(f"""
-        <div style="background:var(--surface-2); border-left:3px solid var(--accent-1);
-                    border-radius:8px; padding:0.5rem 0.8rem; margin-bottom:0.8rem;
-                    font-size:0.8rem; color:var(--text-2);">
-            🎯 <b>Contexte personnel activé</b> — Le chatbot connaît votre profil : 
-            <b>{name}</b> · {nb_skills} compétences
-        </div>
-        """, unsafe_allow_html=True)
-
-    # ============================================================
-    # INITIALISATION
-    # ============================================================
-    if "chat_feedback" not in st.session_state:
-        st.session_state.chat_feedback = {}
-
-    if not st.session_state.chat_history:
-        welcome = """Bonjour ! 👋 Je suis **JobPulseAI**, votre assistant carrière intelligent.
-
-Je peux vous aider sur :
-- 🎯 Les **compétences** à acquérir
-- 💰 Les **salaires** par métier
-- 📄 L'optimisation de votre **CV**
-- 🎤 La préparation aux **entretiens**
-- 🚀 Les **métiers** de la Data & Tech
-- 🎓 Les **formations** et certifications
-
-**Posez-moi n'importe quelle question !** Je réponds avec l'IA la plus récente."""
-        st.session_state.chat_history = [("assistant", welcome)]
-
-    # ============================================================
-    # AFFICHAGE DE L'HISTORIQUE
-    # ============================================================
-    for idx, (role, msg) in enumerate(st.session_state.chat_history):
-        if role == "user":
-            with st.chat_message("user", avatar="👤"):
-                st.markdown(msg)
-        else:
-            with st.chat_message("assistant", avatar="🤖"):
-                st.markdown(msg)
-                
-                # Boutons d'action sous chaque réponse assistant (sauf la première)
-                if idx > 0:
-                    col1, col2, col3 = st.columns([1, 1, 8])
-                    with col1:
-                        # Bouton Copier
-                        if st.button("📋", key=f"copy_{idx}", help="Copier la réponse"):
-                            st.toast("✅ Réponse copiée !", icon="📋")
-                    with col2:
-                        # Feedback
-                        fb = st.session_state.chat_feedback.get(idx, None)
-                        if fb is None:
-                            if st.button("👍", key=f"like_{idx}", help="Bonne réponse"):
-                                st.session_state.chat_feedback[idx] = "like"
-                                st.toast("Merci pour votre retour ! 👍", icon="✅")
-                                st.rerun()
-                        else:
-                            st.caption("👍" if fb == "like" else "👎")
-
-    # ============================================================
-    # SUGGESTIONS CATÉGORISÉES
-    # ============================================================
     st.markdown("---")
-    st.markdown("### 💡 Suggestions")
 
-    # Catégories
-    tabs = st.tabs(["🎯 Compétences", "💰 Salaire", "📄 CV", "🎤 Entretien", "🚀 Carrière"])
+    # ============================================================
+    # LAYOUT 2 COLONNES : Historique | Conversation
+    # ============================================================
+    col_history, col_chat = st.columns([1, 3])
 
-    suggestions_by_cat = {
-        0: [
-            "Quelles compétences pour devenir Data Scientist ?",
-            "Comment apprendre le Machine Learning ?",
-            "Python ou R : que choisir ?",
-        ],
-        1: [
-            "Quel salaire pour un ML Engineer ?",
-            "Comment négocier mon salaire ?",
-            "Quel salaire pour un Data Engineer junior ?",
-        ],
-        2: [
-            "Comment améliorer mon CV ?",
-            "Quelles compétences mettre en avant ?",
-            "Comment structurer une lettre de motivation ?",
-        ],
-        3: [
-            "Comment préparer un entretien technique ?",
-            "Quelles questions poser en entretien ?",
-            "Comment répondre à 'parlez-moi de vous' ?",
-        ],
-        4: [
-            "Data Scientist ou ML Engineer ?",
-            "Comment passer de Data Analyst à Data Scientist ?",
-            "Quelles certifications valent le coup ?",
-        ],
-    }
+    # ------------------------------------------------------------
+    # COLONNE GAUCHE : HISTORIQUE
+    # ------------------------------------------------------------
+    with col_history:
+        st.markdown("##### 📜 Historique")
 
-    for tab_idx, tab in enumerate(tabs):
-        with tab:
-            cols = st.columns(3)
-            for i, sugg in enumerate(suggestions_by_cat[tab_idx]):
-                with cols[i % 3]:
-                    if st.button(sugg, key=f"sugg_{tab_idx}_{i}", use_container_width=True):
-                        st.session_state.chat_history.append(("user", sugg))
-                        with st.spinner("🤔 Réflexion..."):
-                            result = chatbot_api(
-                                question=sugg,
-                                profile=st.session_state.cv_profile,
-                                history=[
-                                    {"role": r, "content": m}
-                                    for r, m in st.session_state.chat_history[-6:]
-                                ]
-                            )
-                            response = result.get("response", "Erreur") if result else "Erreur"
-                        st.session_state.chat_history.append(("assistant", response))
+        # Trier : épinglés en premier, puis par date
+        convs = sorted(
+            st.session_state.conversations.items(),
+            key=lambda x: (not x[1]["pinned"], x[1]["updated_at"]),
+            reverse=False,
+        )
+        convs = [(cid, c) for cid, c in convs]
+        convs.sort(key=lambda x: (not x[1]["pinned"], -1 if False else x[1]["updated_at"]),
+                   reverse=False)
+
+        # Séparer épinglés et non-épinglés
+        pinned = [(cid, c) for cid, c in st.session_state.conversations.items() if c["pinned"]]
+        unpinned = [(cid, c) for cid, c in st.session_state.conversations.items() if not c["pinned"]]
+
+        # Trier par date décroissante
+        pinned.sort(key=lambda x: x[1]["updated_at"], reverse=True)
+        unpinned.sort(key=lambda x: x[1]["updated_at"], reverse=True)
+
+        # ---- Épinglés ----
+        if pinned:
+            st.markdown("📌 **Épinglés**")
+            for cid, conv in pinned:
+                is_active = (cid == st.session_state.current_conv_id)
+                cls = "conv-item active pinned" if is_active else "conv-item pinned"
+                st.markdown(f"""
+                <div class="{cls}">
+                    <div class="conv-title">📌 {conv['title']}</div>
+                    <div class="conv-date">{len(conv['messages'])} messages</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Boutons d'action
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    if st.button("▶️", key=f"open_{cid}", help="Ouvrir", use_container_width=True):
+                        st.session_state.current_conv_id = cid
+                        st.rerun()
+                with c2:
+                    if st.button("📌", key=f"unpin_{cid}", help="Désépingler", use_container_width=True):
+                        toggle_pin(cid)
+                        st.rerun()
+                with c3:
+                    if st.button("🗑️", key=f"del_{cid}", help="Supprimer", use_container_width=True):
+                        delete_conversation(cid)
                         st.rerun()
 
+        # ---- Aujourd'hui ----
+        if unpinned:
+            st.markdown("🕒 **Récentes**")
+            for cid, conv in unpinned[:10]:
+                is_active = (cid == st.session_state.current_conv_id)
+                cls = "conv-item active" if is_active else "conv-item"
+                st.markdown(f"""
+                <div class="{cls}">
+                    <div class="conv-title">{conv['title']}</div>
+                    <div class="conv-date">{len(conv['messages'])} messages</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    if st.button("▶️", key=f"open2_{cid}", help="Ouvrir", use_container_width=True):
+                        st.session_state.current_conv_id = cid
+                        st.rerun()
+                with c2:
+                    if st.button("📌", key=f"pin_{cid}", help="Épingler", use_container_width=True):
+                        toggle_pin(cid)
+                        st.rerun()
+                with c3:
+                    if st.button("🗑️", key=f"del2_{cid}", help="Supprimer", use_container_width=True):
+                        delete_conversation(cid)
+                        st.rerun()
+
+    # ------------------------------------------------------------
+    # COLONNE DROITE : CONVERSATION
+    # ------------------------------------------------------------
+    with col_chat:
+        conv = get_current_conversation()
+        if conv is None:
+            st.info("Aucune conversation. Cliquez sur **＋ Nouveau**.")
+            return
+
+        # Titre de la conversation
+        col_t1, col_t2 = st.columns([4, 1])
+        with col_t1:
+            st.markdown(f"#### 💬 {conv['title']}")
+        with col_t2:
+            if st.button("📤 Exporter", key="export_conv", use_container_width=True):
+                txt = "\n\n".join([f"{'👤 Vous' if m['role']=='user' else '🤖 IA'}: {m['content']}"
+                                    for m in conv["messages"]])
+                st.download_button("📥 Télécharger", txt,
+                                   file_name=f"chat_{conv['title'][:20]}.txt",
+                                   mime="text/plain", key="dl_conv")
+
+        # ---- Zone de messages ----
+        if not conv["messages"]:
+            # Message de bienvenue
+            st.markdown("""
+            <div style="text-align:center; padding:2rem 1rem; color:var(--text-2);">
+                <div style="font-size:3rem;">🤖</div>
+                <h3 style="color:var(--text-1); margin-top:0.5rem;">Bonjour ! Comment puis-je vous aider ?</h3>
+                <p style="color:var(--text-3);">Posez-moi une question sur les compétences, les salaires, votre CV, les entretiens...</p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            for msg in conv["messages"]:
+                with st.chat_message(msg["role"], avatar="👤" if msg["role"] == "user" else "🤖"):
+                    st.markdown(msg["content"])
+
     # ============================================================
-    # ZONE DE SAISIE
+    # ZONE DE SAISIE FIXE (pleine largeur en bas)
     # ============================================================
     user_input = st.chat_input("💬 Posez votre question à l'IA...")
+
     if user_input:
-        st.session_state.chat_history.append(("user", user_input))
+        # Ajouter le message utilisateur
+        add_message_to_current("user", user_input)
+
+        # Appeler le LLM
         with st.spinner("🤔 L'IA réfléchit..."):
             result = chatbot_api(
                 question=user_input,
                 profile=st.session_state.cv_profile,
                 history=[
-                    {"role": r, "content": m}
-                    for r, m in st.session_state.chat_history[-6:]
+                    {"role": m["role"], "content": m["content"]}
+                    for m in get_current_conversation()["messages"][-6:]
                 ]
             )
             response = result.get("response", "Erreur") if result else "Erreur"
-        st.session_state.chat_history.append(("assistant", response))
-        st.rerun()
 
-    # ============================================================
-    # EXPORT DE LA CONVERSATION
-    # ============================================================
-    if len(st.session_state.chat_history) > 2:
-        st.markdown("---")
-        col1, col2 = st.columns([3, 1])
-        with col2:
-            chat_text = "\n\n".join([
-                f"{'👤 Vous' if r == 'user' else '🤖 JobPulseAI'} :\n{m}"
-                for r, m in st.session_state.chat_history
-            ])
-            st.download_button(
-                "📥 Exporter la conversation",
-                data=chat_text,
-                file_name=f"chat_jobpulseai_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
-                mime="text/plain",
-                use_container_width=True,
-            )
+        add_message_to_current("assistant", response)
+        st.rerun()
 
 def page_rapport():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
