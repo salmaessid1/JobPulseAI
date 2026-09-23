@@ -30,7 +30,7 @@ import traceback
 import urllib.request
 import urllib.error
 import ssl
-
+import re as _re
 # Contexte SSL pour développement local
 _ssl_context = ssl.create_default_context()
 _ssl_context.check_hostname = False
@@ -1052,15 +1052,14 @@ with st.sidebar:
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
 
     # ========== 5. NOTIFICATIONS TEMPS RÉEL ==========
+    # ========== 5. NOTIFICATIONS TEMPS RÉEL ==========
     realtime_notif = snapshot.get("notifications", 0) if snapshot else 0
-    
-    # Vérifier si nouvelles notifs (par rapport au dernier compteur vu)
+
     if "last_seen_notif" not in st.session_state:
         st.session_state.last_seen_notif = 0
-    
+
     has_new = realtime_notif > st.session_state.last_seen_notif
-    
-    # Afficher toujours l'icône de notification
+
     col_n1, col_n2 = st.columns([3, 1])
     with col_n1:
         st.markdown(f'<p class="sidebar-section-label" style="margin:0;">🔔 {tr("notifications")}</p>', unsafe_allow_html=True)
@@ -1071,19 +1070,24 @@ with st.sidebar:
             <div style="background:#ec4899; color:white; border-radius:999px; text-align:center;
                  font-size:0.6rem; font-weight:700; padding:0.1rem 0.4rem; {pulse_css}">{realtime_notif}</div>
             """, unsafe_allow_html=True)
-    
+
     if realtime_notif > 0:
         latest = snapshot.get("latest_title", "") if snapshot else ""
+        # Nettoyer tout HTML résiduel dans le titre
+        latest = _re.sub(r'<[^>]+>', '', str(latest))
+        latest = latest.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"')
+        latest = _re.sub(r'\s+', ' ', latest).strip()
+        latest_short = latest[:50] + "..." if len(latest) > 50 else latest
+        if not latest_short:
+            latest_short = "Nouvelles offres disponibles"
+
         st.markdown(f"""
-        <div style="background:var(--surface-2); border-radius:8px; padding:0.4rem 0.55rem;
-                    margin:0.2rem 0; border-left:3px solid #ec4899;">
+        <div style="background:var(--surface-2); border-radius:8px; padding:0.4rem 0.55rem; margin:0.2rem 0; border-left:3px solid #ec4899;">
             <div style="font-size:0.7rem; font-weight:600;">📢 {realtime_notif} {tr("new_offers")}</div>
-            <div style="font-size:0.62rem; color:var(--text-3); margin-top:0.15rem;">
-                {latest[:50] + "..." if len(latest) > 50 else latest}
-            </div>
+            <div style="font-size:0.62rem; color:var(--text-3); margin-top:0.15rem;">{latest_short}</div>
         </div>
         """, unsafe_allow_html=True)
-        
+
         if st.button(f"✅ {tr('mark_read')}", key="clear_notifs", use_container_width=True):
             st.session_state.last_seen_notif = realtime_notif
             st.rerun()
@@ -1091,7 +1095,6 @@ with st.sidebar:
         st.caption(tr("no_notifications"))
 
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
-    
     # ========== 6. MENU ==========
     st.markdown(f'<p class="sidebar-section-label">📋 {tr("menu")}</p>', unsafe_allow_html=True)
     page_labels = [tr("page_home"), tr("page_market"), tr("page_cv"),

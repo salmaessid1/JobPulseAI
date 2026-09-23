@@ -323,7 +323,12 @@ async def realtime_notifications():
         recent = df[df['listed_time'] >= cutoff]
         count = len(recent)
         
-        latest_title = recent.iloc[0]['title'] if len(recent) > 0 and 'title' in recent.columns else "Aucune nouvelle offre"
+        import re as _re
+        raw_title = recent.iloc[0]['title'] if len(recent) > 0 and 'title' in recent.columns else "Aucune nouvelle offre"
+        # Nettoyer le HTML
+        latest_title = _re.sub(r'<[^>]+>', '', str(raw_title)).strip()
+        if not latest_title:
+           latest_title = "Nouvelles offres disponibles"
         
         # Si rien dans les 24h, prendre les 10 dernières
         if count == 0:
@@ -351,6 +356,7 @@ async def realtime_snapshot():
                 "avg_salary": 0, "remote_percent": 0,
                 "notifications": 0, "activity": [0]*7,
                 "last_update": datetime.now().isoformat(),
+                "latest_title": latest_title_clean,
             }
         
         # Stats de base
@@ -392,13 +398,24 @@ async def realtime_snapshot():
             activity = [base + i * 2 + (i % 3) for i in range(7)]
         
         # Notifications : nouvelles offres depuis 24h
+        # Récupérer le dernier titre nettoyé
+                # Notifications : nouvelles offres depuis 24h
         notifications = 0
         if 'listed_time' in df.columns:
             cutoff = datetime.now() - timedelta(hours=24)
-            notifications = len(df[df['listed_time'] >= cutoff])
+            df_with_time = df.dropna(subset=['listed_time'])
+            notifications = len(df_with_time[df_with_time['listed_time'] >= cutoff])
             if notifications == 0:
                 notifications = min(5, total_jobs)
-        
+
+        # Récupérer le dernier titre nettoyé
+        import re as _re
+        latest_title_clean = "Nouvelles offres disponibles"
+        if 'title' in df.columns and len(df) > 0:
+            raw = str(df.iloc[0]['title'])
+            latest_title_clean = _re.sub(r'<[^>]+>', '', raw).strip()[:80]
+            if not latest_title_clean:
+                latest_title_clean = "Nouvelles offres disponibles"
         return {
             "total_jobs": int(total_jobs),
             "unique_companies": int(companies),
@@ -406,6 +423,7 @@ async def realtime_snapshot():
             "avg_salary": avg_salary,
             "remote_percent": remote_pct,
             "notifications": int(notifications),
+            "latest_title": latest_title_clean,
             "activity": activity,
             "activity_labels": [(datetime.now() - timedelta(days=i)).strftime("%d/%m") for i in range(6, -1, -1)],
             "last_update": datetime.now().isoformat(),
