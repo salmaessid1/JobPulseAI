@@ -80,3 +80,14 @@ class Message(Base):
     role = Column(String(20))  # "user" ou "assistant"
     content = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class User(Base):
+    """Utilisateur de l'application."""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    email = Column(String(200), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(300), nullable=False)
+    full_name = Column(String(200), default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Integer, default=1)

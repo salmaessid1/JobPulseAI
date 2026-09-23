@@ -17,6 +17,8 @@ dependencies:
   intl: ^0.20.3
   path: ^1.9.1
   logger: ^2.0.0
+  shared_preferences: ^2.2.2
+
 
 
 dev_dependencies:

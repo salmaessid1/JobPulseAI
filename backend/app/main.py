@@ -10,7 +10,7 @@ from app.database import init_db
 from app.routes import history
 from dotenv import load_dotenv
 load_dotenv()
-from app.routes import chatbot,conversations
+from app.routes import chatbot,conversations,auth
 # Après la création de l'app FastAPI
 
 app = FastAPI(
@@ -27,6 +27,7 @@ print("✅ Données pré-chargées en mémoire")
 app.include_router(history.router)
 app.include_router(chatbot.router)
 app.include_router(conversations.router)
+app.include_router(auth.router)
 
 # CORS
 app.add_middleware(
