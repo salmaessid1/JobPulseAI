@@ -2070,82 +2070,10 @@ def page_assistant():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
 
     # ============================================================
-    # INIT : Créer une conversation si aucune n'existe
+    # INIT
     # ============================================================
-    if not st.session_state.conversations:
-        create_new_conversation()
-
-    if st.session_state.current_conv_id is None:
-        # Prendre la plus récente
-        latest = max(st.session_state.conversations.items(),
-                     key=lambda x: x[1]["updated_at"])
-        st.session_state.current_conv_id = latest[0]
-
-    # ============================================================
-    # CSS POUR CHATGPT-LIKE
-    # ============================================================
-    st.markdown("""
-    <style>
-        /* Zone conversation scrollable */
-        .chat-container {
-            max-height: 55vh;
-            overflow-y: auto;
-            padding: 1rem;
-            border-radius: 12px;
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            margin-bottom: 1rem;
-        }
-        
-        /* Historique sidebar */
-        .conv-item {
-            background: var(--surface-solid);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.6rem 0.8rem;
-            margin-bottom: 0.4rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-        }
-        .conv-item:hover {
-            background: var(--surface-2);
-            border-color: var(--accent-1);
-        }
-        .conv-item.active {
-            background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(236,72,153,0.1));
-            border-color: var(--accent-1);
-        }
-        .conv-item.pinned {
-            border-left: 3px solid var(--accent-2);
-        }
-        .conv-title {
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--text-1);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .conv-date {
-            font-size: 0.68rem;
-            color: var(--text-3);
-            margin-top: 0.2rem;
-        }
-        
-        /* Sticky input */
-        .stChatInputContainer {
-            position: sticky;
-            bottom: 0;
-            z-index: 100;
-            background: var(--surface-solid);
-            padding: 0.5rem;
-            border-radius: 12px;
-            border: 2px solid var(--accent-1) !important;
-            box-shadow: 0 -4px 20px rgba(139,92,246,0.2);
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    if "current_conv_id" not in st.session_state:
+        st.session_state.current_conv_id = None
 
     # ============================================================
     # EN-TÊTE
@@ -2154,11 +2082,9 @@ def page_assistant():
     is_ia_active = llm_status and llm_status.get("available")
 
     col_title, col_status, col_new = st.columns([2, 2, 1])
-
     with col_title:
         st.markdown(f'<div style="font-size:1.5rem; font-weight:700;">🤖 Assistant IA</div>',
                     unsafe_allow_html=True)
-
     with col_status:
         if is_ia_active:
             st.markdown(f"""
@@ -2173,108 +2099,68 @@ def page_assistant():
             """, unsafe_allow_html=True)
         else:
             st.caption("⚠️ Mode démo")
-
     with col_new:
         if st.button("＋ Nouveau", key="new_conv_btn", use_container_width=True):
-            create_new_conversation()
-            st.rerun()
+            result = api_call("POST", "/conversations/", json={"title": "Nouvelle conversation"})
+            if result and "id" in result:
+                st.session_state.current_conv_id = result["id"]
+                st.rerun()
 
     st.markdown("---")
 
     # ============================================================
-    # LAYOUT 2 COLONNES : Historique | Conversation
+    # LAYOUT 2 COLONNES
     # ============================================================
     col_history, col_chat = st.columns([1, 3])
 
     # ------------------------------------------------------------
-    # COLONNE GAUCHE : HISTORIQUE
+    # COLONNE GAUCHE : HISTORIQUE (depuis l'API)
     # ------------------------------------------------------------
     with col_history:
         st.markdown("##### 📜 Historique")
 
-        # Trier : épinglés en premier, puis par date
-        convs = sorted(
-            st.session_state.conversations.items(),
-            key=lambda x: (not x[1]["pinned"], x[1]["updated_at"]),
-            reverse=False,
-        )
-        convs = [(cid, c) for cid, c in convs]
-        convs.sort(key=lambda x: (not x[1]["pinned"], -1 if False else x[1]["updated_at"]),
-                   reverse=False)
+        conversations = api_call("GET", "/conversations/") or []
 
-        # Séparer épinglés et non-épinglés
-        pinned = [(cid, c) for cid, c in st.session_state.conversations.items() if c["pinned"]]
-        unpinned = [(cid, c) for cid, c in st.session_state.conversations.items() if not c["pinned"]]
+        if not conversations:
+            st.caption("Aucune conversation")
+        else:
+            pinned = [c for c in conversations if c.get("pinned")]
+            unpinned = [c for c in conversations if not c.get("pinned")]
 
-        # Trier par date décroissante
-        pinned.sort(key=lambda x: x[1]["updated_at"], reverse=True)
-        unpinned.sort(key=lambda x: x[1]["updated_at"], reverse=True)
+            if pinned:
+                st.markdown("📌 **Épinglés**")
+                for c in pinned:
+                    _render_conv_item(c, is_pinned=True)
 
-        # ---- Épinglés ----
-        if pinned:
-            st.markdown("📌 **Épinglés**")
-            for cid, conv in pinned:
-                is_active = (cid == st.session_state.current_conv_id)
-                cls = "conv-item active pinned" if is_active else "conv-item pinned"
-                st.markdown(f"""
-                <div class="{cls}">
-                    <div class="conv-title">📌 {conv['title']}</div>
-                    <div class="conv-date">{len(conv['messages'])} messages</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                # Boutons d'action
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    if st.button("▶️", key=f"open_{cid}", help="Ouvrir", use_container_width=True):
-                        st.session_state.current_conv_id = cid
-                        st.rerun()
-                with c2:
-                    if st.button("📌", key=f"unpin_{cid}", help="Désépingler", use_container_width=True):
-                        toggle_pin(cid)
-                        st.rerun()
-                with c3:
-                    if st.button("🗑️", key=f"del_{cid}", help="Supprimer", use_container_width=True):
-                        delete_conversation(cid)
-                        st.rerun()
-
-        # ---- Aujourd'hui ----
-        if unpinned:
-            st.markdown("🕒 **Récentes**")
-            for cid, conv in unpinned[:10]:
-                is_active = (cid == st.session_state.current_conv_id)
-                cls = "conv-item active" if is_active else "conv-item"
-                st.markdown(f"""
-                <div class="{cls}">
-                    <div class="conv-title">{conv['title']}</div>
-                    <div class="conv-date">{len(conv['messages'])} messages</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    if st.button("▶️", key=f"open2_{cid}", help="Ouvrir", use_container_width=True):
-                        st.session_state.current_conv_id = cid
-                        st.rerun()
-                with c2:
-                    if st.button("📌", key=f"pin_{cid}", help="Épingler", use_container_width=True):
-                        toggle_pin(cid)
-                        st.rerun()
-                with c3:
-                    if st.button("🗑️", key=f"del2_{cid}", help="Supprimer", use_container_width=True):
-                        delete_conversation(cid)
-                        st.rerun()
+            if unpinned:
+                st.markdown("🕒 **Récentes**")
+                for c in unpinned:
+                    _render_conv_item(c, is_pinned=False)
 
     # ------------------------------------------------------------
-    # COLONNE DROITE : CONVERSATION
+    # COLONNE DROITE : CONVERSATION ACTIVE
     # ------------------------------------------------------------
     with col_chat:
-        conv = get_current_conversation()
-        if conv is None:
-            st.info("Aucune conversation. Cliquez sur **＋ Nouveau**.")
+        current_id = st.session_state.current_conv_id
+
+        if not current_id:
+            # Prendre la première conversation
+            if conversations:
+                st.session_state.current_conv_id = conversations[0]["id"]
+                st.rerun()
+            else:
+                st.info("👈 Cliquez sur **＋ Nouveau** pour démarrer une conversation.")
+                return
+
+        # Charger la conversation
+        conv = api_call("GET", f"/conversations/{current_id}")
+        if not conv:
+            st.error("Conversation introuvable")
+            st.session_state.current_conv_id = None
+            st.rerun()
             return
 
-        # Titre de la conversation
+        # Titre
         col_t1, col_t2 = st.columns([4, 1])
         with col_t1:
             st.markdown(f"#### 💬 {conv['title']}")
@@ -2286,9 +2172,8 @@ def page_assistant():
                                    file_name=f"chat_{conv['title'][:20]}.txt",
                                    mime="text/plain", key="dl_conv")
 
-        # ---- Zone de messages ----
+        # Messages
         if not conv["messages"]:
-            # Message de bienvenue
             st.markdown("""
             <div style="text-align:center; padding:2rem 1rem; color:var(--text-2);">
                 <div style="font-size:3rem;">🤖</div>
@@ -2302,29 +2187,74 @@ def page_assistant():
                     st.markdown(msg["content"])
 
     # ============================================================
-    # ZONE DE SAISIE FIXE (pleine largeur en bas)
+    # ZONE DE SAISIE
     # ============================================================
     user_input = st.chat_input("💬 Posez votre question à l'IA...")
 
     if user_input:
-        # Ajouter le message utilisateur
-        add_message_to_current("user", user_input)
+        current_id = st.session_state.current_conv_id
+
+        # Sauvegarder le message utilisateur
+        api_call("POST", f"/conversations/{current_id}/messages",
+                 json={"role": "user", "content": user_input})
 
         # Appeler le LLM
         with st.spinner("🤔 L'IA réfléchit..."):
+            # Récupérer l'historique
+            conv = api_call("GET", f"/conversations/{current_id}")
+            history = [
+                {"role": m["role"], "content": m["content"]}
+                for m in conv["messages"][-6:]
+            ] if conv else []
+
             result = chatbot_api(
                 question=user_input,
                 profile=st.session_state.cv_profile,
-                history=[
-                    {"role": m["role"], "content": m["content"]}
-                    for m in get_current_conversation()["messages"][-6:]
-                ]
+                history=history,
             )
             response = result.get("response", "Erreur") if result else "Erreur"
 
-        add_message_to_current("assistant", response)
+        # Sauvegarder la réponse
+        api_call("POST", f"/conversations/{current_id}/messages",
+                 json={"role": "assistant", "content": response})
+
         st.rerun()
 
+
+# ============================================================
+# HELPER : afficher un item de conversation
+# ============================================================
+def _render_conv_item(c, is_pinned):
+    cid = c["id"]
+    is_active = (cid == st.session_state.current_conv_id)
+    cls = "conv-item active" + (" pinned" if is_pinned else "") if is_active else "conv-item" + (" pinned" if is_pinned else "")
+    prefix = "📌 " if is_pinned else ""
+    st.markdown(f"""
+    <div class="{cls}">
+        <div class="conv-title">{prefix}{c['title']}</div>
+        <div class="conv-date">{c['message_count']} messages</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        if st.button("▶️", key=f"open_{cid}", help="Ouvrir", use_container_width=True):
+            st.session_state.current_conv_id = cid
+            st.rerun()
+    with c2:
+        label = "📌" if not is_pinned else "📍"
+        help_txt = "Épingler" if not is_pinned else "Désépingler"
+        if st.button(label, key=f"pin_{cid}", help=help_txt, use_container_width=True):
+            api_call("PATCH", f"/conversations/{cid}", json={"pinned": not is_pinned})
+            st.rerun()
+    with c3:
+        if st.button("🗑️", key=f"del_{cid}", help="Supprimer", use_container_width=True):
+            api_call("DELETE", f"/conversations/{cid}")
+            if st.session_state.current_conv_id == cid:
+                st.session_state.current_conv_id = None
+            st.rerun()
+
+            
 def page_rapport():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
     st.markdown(f'<div class="main-header">{tr("report_title")}</div>', unsafe_allow_html=True)

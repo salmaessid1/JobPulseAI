@@ -57,3 +57,26 @@ def get_db():
 
 if __name__ == "__main__":
     init_db()
+
+
+class Conversation(Base):
+    """Conversation du chatbot."""
+    __tablename__ = "conversations"
+
+    id = Column(String(50), primary_key=True, index=True)
+    user_id = Column(String(100), default="default", index=True)
+    title = Column(String(200), default="Nouvelle conversation")
+    pinned = Column(Integer, default=0)  # 0 ou 1
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Message(Base):
+    """Message d'une conversation."""
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    conversation_id = Column(String(50), index=True)
+    role = Column(String(20))  # "user" ou "assistant"
+    content = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
