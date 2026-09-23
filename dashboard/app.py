@@ -53,7 +53,6 @@ print(f"🔗 API_BASE_URL = {API_BASE_URL}")
 APP_VERSION = "5.2"
 
 
-    
 defaults = {
     "dark_mode": True,
     "cv_profile": None,
@@ -63,10 +62,187 @@ defaults = {
     "match_result": None,
     "auto_refresh": False,
     "current_page": "🏠 Accueil",
+    "accent_theme": "violet",
+    "language": "FR",
+    "search_query": "",
+    "notifications_count": 0,
+    "recent_actions": [],
 }
+
 for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
+
+# ============================================================
+# SYSTÈME DE TRADUCTION (i18n)
+# ============================================================
+TRANSLATIONS = {
+    "FR": {
+        "search": "Recherche",
+        "search_placeholder": "Offres, compétences...",
+        "api_online": "API connectée",
+        "api_offline": "API hors ligne",
+        "menu": "Menu",
+        "quick_actions": "Actions rapides",
+        "recent": "Activité récente",
+        "preferences": "Préférences",
+        "dark_mode": "Mode sombre",
+        "auto_refresh": "Auto-refresh (15s)",
+        "language": "Langue",
+        "accent_color": "Couleur d'accent",
+        "overview": "En un coup d'œil",
+        "offers": "Offres",
+        "skills": "Compétences",
+        "companies": "Entreprises",
+        "remote_rate": "Taux remote",
+        "session": "Session",
+        "reset_cv": "Reset CV",
+        "cache": "Cache",
+        "refresh": "Actualiser",
+        "help": "Aide & Support",
+        "notifications": "Notifications",
+        "no_notifications": "Aucune notification",
+        "mark_read": "Marquer comme lues",
+        "new_offers": "nouvelle(s) offre(s)",
+        "matching_profile": "Correspondent à votre profil",
+        "no_cv": "Aucun CV chargé",
+        "load_cv": "Chargez votre CV pour commencer",
+        "profile_complete": "Profil complété",
+        "activity_7d": "Activité (7 derniers jours)",
+        "data_unavailable": "Données indisponibles",
+        "page_home": "🏠 Accueil",
+        "page_market": "📈 Marché",
+        "page_cv": "📄 CV",
+        "page_matching": "🤝 Matching",
+        "page_recommendations": "🎯 Recommandations",
+        "page_salary": "💰 Salaire",
+        "page_comparator": "📊 Comparateur",
+        "page_career": "📊 Analyse carrière",
+        "page_assistant": "🤖 Assistant",
+        "page_report": "📄 Rapport",
+        "section_indicators": "📌 Indicateurs clés",
+        "section_performance": "🎯 Performance du recrutement & matching",
+        "section_market": "📊 Analyse du marché de l'emploi",
+        "dashboard_title": "📊 Tableau de bord – Performance du recrutement",
+        "dashboard_subtitle": "Comprenez la performance de votre recrutement en temps réel.",
+        "last_update": "Dernière mise à jour",
+        "product": "Produit",
+        "updates": "Recevoir les mises à jour",
+        "subscribe": "Je m'abonne",
+        "email_placeholder": "Votre e-mail",
+        "privacy": "En vous inscrivant, vous acceptez notre politique de confidentialité.",
+        "all_rights": "© 2026 JobPulseAI · Politique de confidentialité · Conditions d'utilisation",
+        "market_title": "📈 Analyse du marché",
+        "cv_title": "📄 Analyse de CV",
+        "matching_title": "🤝 Matching CV / Offre",
+        "reco_title": "🎯 Recommandations d'offres",
+        "salary_title": "💰 Prédiction de salaire",
+        "comparator_title": "📊 Comparateur d'offres",
+        "career_title": "📊 Analyse de carrière",
+        "assistant_title": "🤖 Assistant carrière",
+        "report_title": "📄 Rapport personnalisé",
+        "indicators": "📌 Indicateurs clés",
+"active_offers": "Offres actives",
+"matching_time": "Temps de matching moyen",
+"reco_rate": "Taux de recommandation",
+"ai_prediction": "Prédiction IA (acceptation)",
+"performance_section": "🎯 Performance du recrutement & matching",
+"matching_precision": "🎯 Précision du matching IA",
+"hires_by_dept": "🏢 Recrutements par département",
+"correspondence_dist": "📈 Distribution des correspondances",
+"conversion": "🔄 Conversion des candidats",
+"market_section": "📊 Analyse du marché de l'emploi",
+"sectors_dist": "🏢 Répartition des offres par secteur",
+"salaries_by_sector": "💰 Salaire moyen par secteur",
+"top_cities": "🌍 Top 15 villes qui recrutent",
+"remote_by_city": "🏠 Taux de remote par ville",
+"cooccurrence": "🔥 Matrice de co-occurrence des compétences",
+"data_unavailable": "Données indisponibles",
+    },
+    "EN": {
+        "search": "Search",
+        "search_placeholder": "Jobs, skills...",
+        "api_online": "API connected",
+        "api_offline": "API offline",
+        "menu": "Menu",
+        "quick_actions": "Quick actions",
+        "recent": "Recent activity",
+        "preferences": "Preferences",
+        "dark_mode": "Dark mode",
+        "auto_refresh": "Auto-refresh (15s)",
+        "language": "Language",
+        "accent_color": "Accent color",
+        "overview": "Overview",
+        "offers": "Jobs",
+        "skills": "Skills",
+        "companies": "Companies",
+        "remote_rate": "Remote rate",
+        "session": "Session",
+        "reset_cv": "Reset CV",
+        "cache": "Cache",
+        "refresh": "Refresh",
+        "help": "Help & Support",
+        "notifications": "Notifications",
+        "no_notifications": "No notifications",
+        "mark_read": "Mark as read",
+        "new_offers": "new offer(s)",
+        "matching_profile": "Match your profile",
+        "no_cv": "No CV loaded",
+        "load_cv": "Upload your CV to start",
+        "profile_complete": "Profile completion",
+        "activity_7d": "Activity (last 7 days)",
+        "data_unavailable": "Data unavailable",
+        "page_home": "🏠 Home",
+        "page_market": "📈 Market",
+        "page_cv": "📄 Resume",
+        "page_matching": "🤝 Matching",
+        "page_recommendations": "🎯 Recommendations",
+        "page_salary": "💰 Salary",
+        "page_comparator": "📊 Comparator",
+        "page_career": "📊 Career analysis",
+        "page_assistant": "🤖 Assistant",
+        "page_report": "📄 Report",
+        "section_indicators": "📌 Key indicators",
+        "section_performance": "🎯 Recruitment performance & matching",
+        "section_market": "📊 Job market analysis",
+        "dashboard_title": "📊 Dashboard – Recruitment performance",
+        "dashboard_subtitle": "Understand your recruitment performance in real time.",
+        "last_update": "Last update",
+        "product": "Product",
+        "updates": "Get updates",
+        "subscribe": "Subscribe",
+        "email_placeholder": "Your email",
+        "privacy": "By subscribing, you agree to our privacy policy.",
+        "all_rights": "© 2026 JobPulseAI · Privacy Policy · Terms of Use",
+        "market_title": "📈 Market analysis",
+        "cv_title": "📄 Resume analysis",
+        "matching_title": "🤝 CV / Job matching",
+        "reco_title": "🎯 Job recommendations",
+        "salary_title": "💰 Salary prediction",
+        "comparator_title": "📊 Job comparator",
+        "career_title": "📊 Career analysis",
+        "assistant_title": "🤖 Career assistant",
+        "report_title": "📄 Personalized report",
+        "indicators": "📌 Key indicators",
+"active_offers": "Active jobs",
+"matching_time": "Average matching time",
+"reco_rate": "Recommendation rate",
+"ai_prediction": "AI prediction (acceptance)",
+"performance_section": "🎯 Recruitment performance & matching",
+"matching_precision": "🎯 AI matching precision",
+"hires_by_dept": "🏢 Hires by department",
+"correspondence_dist": "📈 Correspondence distribution",
+"conversion": "🔄 Candidate conversion",
+"market_section": "📊 Job market analysis",
+"sectors_dist": "🏢 Jobs by sector",
+"salaries_by_sector": "💰 Average salary by sector",
+"top_cities": "🌍 Top 15 hiring cities",
+"remote_by_city": "🏠 Remote rate by city",
+"cooccurrence": "🔥 Skill co-occurrence matrix",
+"data_unavailable": "Data unavailable",
+    },
+}
+
 
 st.set_page_config(
     page_title="JobPulseAI – Career Intelligence Pro",
@@ -88,10 +264,24 @@ _no_proxy_opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 # ============================================================
 # DESIGN SYSTEM 2026 — "MediCore" — CSS only
 # ============================================================
+# ============================================================
+# THÈME ACCENT DYNAMIQUE
+# ============================================================
+ACCENT_THEMES = {
+    "violet":   {"primary": "#8b5cf6", "secondary": "#ec4899"},
+    "bleu":     {"primary": "#3b82f6", "secondary": "#06b6d4"},
+    "rose":     {"primary": "#ec4899", "secondary": "#f43f5e"},
+    "emeraude": {"primary": "#10b981", "secondary": "#22c55e"},
+}
+def tr(key: str) -> str:
+    lang = st.session_state.get("language", "FR")
+    return TRANSLATIONS.get(lang, TRANSLATIONS["FR"]).get(key, key)
+# ============================================================
+# CSS PERSONNALISÉ (MediCore 2026)
+# ============================================================
 def apply_css(dark=True):
     if dark:
         tokens = {
-            # Fond très sombre, bleu-nuit profond (comme MediCore)
             "bg-1": "#07070f", "bg-2": "#0a0b1c", "bg-3": "#0e0f26",
             "surface": "rgba(19, 20, 41, 0.72)",
             "surface-solid": "#12132b",
@@ -137,10 +327,7 @@ def apply_css(dark=True):
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }}
 
-        * {{
-            scrollbar-width: thin;
-            scrollbar-color: var(--border-strong) transparent;
-        }}
+        * {{ scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }}
         ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
         ::-webkit-scrollbar-thumb {{ background: var(--border-strong); border-radius: 8px; }}
         ::-webkit-scrollbar-track {{ background: transparent; }}
@@ -163,7 +350,6 @@ def apply_css(dark=True):
         }}
         .stApp > div {{ position: relative; z-index: 1; }}
 
-        /* ========== SIDEBAR "MediCore" : scroll unique + organisation ========== */
         section[data-testid="stSidebar"] {{
             background: var(--sidebar-bg) !important;
             border-right: 1px solid var(--border);
@@ -171,69 +357,40 @@ def apply_css(dark=True):
             overflow-y: auto !important;
             height: 100vh !important;
         }}
-
-        section[data-testid="stSidebar"] > div {{
-            overflow: visible !important;
-            height: auto !important;
-            min-height: 100%;
-        }}
-
+        section[data-testid="stSidebar"] > div {{ overflow: visible !important; height: auto !important; }}
         section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
             overflow: visible !important;
-            padding: 1.25rem 1rem 2.2rem 1rem !important;
+            padding: 0.8rem 0.85rem 1.5rem 0.85rem !important;
         }}
-
-        section[data-testid="stSidebar"] * {{
-            color: var(--text-1);
-            box-sizing: border-box;
-        }}
-
+        section[data-testid="stSidebar"] * {{ color: var(--text-1); box-sizing: border-box; }}
         section[data-testid="stSidebar"] .stMarkdown p,
-        section[data-testid="stSidebar"] .stCaption {{
-            color: var(--text-2);
-        }}
+        section[data-testid="stSidebar"] .stCaption {{ color: var(--text-2); }}
 
-        section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
-            gap: 0.5rem !important;
+        section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div {{
+            gap: 0.25rem !important;
         }}
-
-        section[data-testid="stSidebar"] .element-container {{
-            margin-bottom: 0.15rem !important;
+        section[data-testid="stSidebar"] .element-container {{ margin-bottom: 0.1rem !important; }}
+        section[data-testid="stSidebar"] hr {{ margin: 0.5rem 0 !important; }}
+        section[data-testid="stSidebar"] .stButton > button {{
+            padding: 0.35rem 0.8rem !important;
+            font-size: 0.78rem !important;
+            min-height: 32px !important;
         }}
-
-        section[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] p {{
-            margin-bottom: 0.15rem !important;
+        section[data-testid="stSidebar"] .stTextInput > div > div > input {{
+            padding: 0.35rem 0.6rem !important;
+            font-size: 0.82rem !important;
+            min-height: 32px !important;
         }}
-
-        /* Labels de section — petites majuscules discrètes */
-        .sidebar-section-label {{
-            font-size: 0.66rem !important;
-            font-weight: 700 !important;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--text-3) !important;
-            margin: 1rem 0 0.5rem 0.2rem !important;
-            display: block;
+        section[data-testid="stSidebar"] .stSelectbox > div > div {{
+            min-height: 32px !important;
+            font-size: 0.82rem !important;
         }}
-
-        /* Séparateurs fins */
-        .sidebar-divider {{
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--border) 15%, var(--border) 85%, transparent);
-            margin: 0.9rem 0 0.7rem 0;
-        }}
-
-        /* Navigation — pilule pleine violette à l'état actif, comme MediCore */
-        section[data-testid="stSidebar"] div[role="radiogroup"] {{
-            gap: 4px !important;
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 0.3rem;
-        }}
+        section[data-testid="stSidebar"] label {{ font-size: 0.78rem !important; }}
+        section[data-testid="stSidebar"] div[role="radiogroup"] {{ gap: 2px !important; display: flex; flex-direction: column; }}
         section[data-testid="stSidebar"] div[role="radiogroup"] label {{
             background: transparent;
             border-radius: var(--radius-sm);
-            padding: 9px 12px !important;
+            padding: 6px 10px !important;
             transition: all 0.18s ease;
             border: 1px solid transparent;
             width: 100%;
@@ -245,7 +402,7 @@ def apply_css(dark=True):
         section[data-testid="stSidebar"] div[role="radiogroup"] label[data-checked="true"],
         section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {{
             background: linear-gradient(135deg, var(--accent-1), #7c3aed);
-            box-shadow: 0 8px 20px rgba(139,92,246,0.35);
+            box-shadow: 0 4px 12px rgba(139,92,246,0.3);
         }}
         section[data-testid="stSidebar"] div[role="radiogroup"] label[data-checked="true"] p,
         section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {{
@@ -253,76 +410,52 @@ def apply_css(dark=True):
         }}
         section[data-testid="stSidebar"] div[role="radiogroup"] label p {{
             font-weight: 600 !important;
-            font-size: 0.86rem !important;
+            font-size: 0.82rem !important;
             margin: 0 !important;
         }}
 
-        /* Bloc métriques "En un coup d'œil" — carte flat foncée */
+        .sidebar-section-label {{
+            font-size: 0.62rem !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-3) !important;
+            margin: 0.5rem 0 0.25rem 0.1rem !important;
+            display: block;
+        }}
+
+        .sidebar-divider {{
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border) 15%, var(--border) 85%, transparent);
+            margin: 0.5rem 0 !important;
+        }}
+
         .sidebar-metrics {{
             background: var(--surface-2);
             border: 1px solid var(--border);
             border-radius: var(--radius-md);
-            padding: 0.75rem 0.95rem;
-            margin: 0.25rem 0 0.4rem 0;
+            padding: 0.5rem 0.7rem !important;
+            margin: 0.2rem 0 0.3rem 0;
         }}
         .sidebar-metrics .metric {{
             display: flex; justify-content: space-between; align-items: center;
-            padding: 0.34rem 0;
+            padding: 0.2rem 0 !important;
             border-bottom: 1px dashed var(--border);
         }}
         .sidebar-metrics .metric:last-child {{ border-bottom: none; }}
-        .sidebar-metrics .label {{ color: var(--text-2); font-size: 0.78rem; }}
-        .sidebar-metrics .value {{ font-weight: 700; color: var(--text-1); font-size: 0.88rem; }}
+        .sidebar-metrics .label {{ color: var(--text-2); font-size: 0.75rem !important; }}
+        .sidebar-metrics .value {{ font-weight: 700; color: var(--text-1); font-size: 0.78rem !important; }}
 
-        /* Toggles */
-        section[data-testid="stSidebar"] div[data-testid="stWidgetLabel"] p {{
-            font-size: 0.84rem !important;
-            font-weight: 500 !important;
-        }}
-        section[data-testid="stSidebar"] label[data-baseweb="checkbox"] {{
-            transform: scale(0.88);
-            transform-origin: left center;
-        }}
-        section[data-testid="stSidebar"] div[data-testid="stToggle"] {{
-            margin-bottom: 0.15rem !important;
-        }}
-        section[data-testid="stSidebar"] div[data-testid="stToggle"] label div[data-checked="true"],
-        section[data-testid="stSidebar"] [role="switch"][aria-checked="true"] {{
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2)) !important;
-        }}
-
-        /* Boutons sidebar — flat, contour discret, fond plein au survol */
-        section[data-testid="stSidebar"] .stButton > button {{
-            background: var(--surface-2);
-            color: var(--text-1);
-            border: 1px solid var(--border);
-            box-shadow: none;
-            font-weight: 600;
-            padding: 0.5rem 1rem;
-            margin-top: 0.15rem;
-            border-radius: var(--radius-sm);
-        }}
-        section[data-testid="stSidebar"] .stButton > button:hover {{
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-            color: white;
-            border-color: transparent;
-            transform: translateY(-1px);
-            box-shadow: 0 8px 18px rgba(139,92,246,0.28);
-        }}
-
-        /* Footer sidebar */
         .sidebar-footer {{
-            margin-top: 1.1rem;
-            padding-top: 0.75rem;
+            margin-top: 0.6rem !important;
+            padding-top: 0.5rem !important;
             border-top: 1px solid var(--border);
-            font-size: 0.68rem;
             color: var(--text-3);
             display: flex;
             flex-direction: column;
-            gap: 0.22rem;
+            gap: 0.1rem !important;
         }}
 
-        /* ========== HEADER PRINCIPAL ========== */
         .main-header {{
             font-family: 'Sora', sans-serif;
             font-size: 1.9rem;
@@ -341,7 +474,6 @@ def apply_css(dark=True):
             background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
         }}
 
-        /* ========== CARTES KPI — flat, icônes colorées type MediCore ========== */
         .metric-card {{
             background: var(--surface-solid);
             border: 1px solid var(--border);
@@ -380,7 +512,6 @@ def apply_css(dark=True):
         .metric-trend-up {{ color: var(--success); font-weight: 700; }}
         .metric-trend-down {{ color: var(--danger); font-weight: 700; }}
 
-        /* Badges pilules */
         .badge-success {{
             background: color-mix(in srgb, var(--success) 16%, transparent);
             color: var(--success);
@@ -403,14 +534,12 @@ def apply_css(dark=True):
             font-size: 0.75rem; font-weight: 700;
         }}
 
-        /* Boutons principaux — dégradé violet → rose, comme "Upgrade Now" MediCore */
         .stButton > button {{
             background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
             color: white; border: none;
             border-radius: var(--radius-sm);
             padding: 0.64rem 1.6rem;
             font-weight: 700;
-            letter-spacing: 0.01em;
             transition: all 0.22s ease;
             box-shadow: 0 8px 20px rgba(139,92,246,0.3);
         }}
@@ -428,11 +557,6 @@ def apply_css(dark=True):
             color: var(--text-1) !important;
             border: 1px solid var(--border) !important;
             border-radius: var(--radius-sm) !important;
-        }}
-        .stTextInput > div > div > input:focus,
-        .stTextArea > div > div > textarea:focus {{
-            border-color: var(--accent-1) !important;
-            box-shadow: 0 0 0 3px rgba(139,92,246,0.18) !important;
         }}
 
         .st-expander, .stAlert, div[data-testid="stExpander"] {{
@@ -455,8 +579,6 @@ def apply_css(dark=True):
             border-radius: var(--radius-lg);
             padding: 1.05rem 1.25rem;
         }}
-        div[data-testid="stMetricLabel"] {{ color: var(--text-2) !important; }}
-        div[data-testid="stMetricValue"] {{ color: var(--text-1) !important; font-family: 'Sora', sans-serif; }}
 
         .comp-table {{ border-collapse: collapse; width: 100%; border-radius: var(--radius-md); overflow: hidden; }}
         .comp-table th, .comp-table td {{ border: 1px solid var(--border); padding: 10px 12px; text-align: left; color: var(--text-1); }}
@@ -471,15 +593,33 @@ def apply_css(dark=True):
             padding: 1rem;
             margin-bottom: 0.6rem;
         }}
+
+        div[data-testid="stContainer"] {{
+            background: var(--surface-solid);
+            border: 1px solid var(--border) !important;
+            border-radius: var(--radius-md) !important;
+            padding: 1rem !important;
+        }}
     </style>
     """, unsafe_allow_html=True)
 
 apply_css(st.session_state.dark_mode)
+# ============================================================
+# APPLICATION DU THÈME ACCENT DYNAMIQUE
+# ============================================================
+theme = ACCENT_THEMES.get(st.session_state.accent_theme, ACCENT_THEMES["violet"])
+st.markdown(f"""
+<style>
+    :root {{
+        --accent-1: {theme['primary']} !important;
+        --accent-2: {theme['secondary']} !important;
+    }}
+</style>
+""", unsafe_allow_html=True)
 
 # ============================================================
 # FONCTIONS API (inchangées)
 # ============================================================
-import subprocess
 
 def _fetch_silent(endpoint, timeout=30):
     """Appelle l'API via requests (compatible Windows ET Linux/Streamlit Cloud)."""
@@ -584,6 +724,17 @@ def get_market_overview():
         futures = {key: executor.submit(_fetch_silent, ep) for key, ep in endpoints.items()}
         return {key: f.result() for key, f in futures.items()}
 
+
+
+    
+@st.cache_data(ttl=15, show_spinner=False)# rafraîchissement toutes les 15 secondes maximum.
+def get_realtime_snapshot():
+    """Récupère un snapshot temps réel (stats + notifications + activité)."""
+    return _fetch_silent("/stats/realtime/snapshot")
+
+
+
+
 def analyze_cv_api(file_bytes, filename):
     files = {"file": (filename, file_bytes, "application/pdf")}
     return api_call("POST", "/cv/upload", files=files)
@@ -608,29 +759,26 @@ def compute_cv_score(profile):
     if profile.get('name') and profile['name'] != 'Inconnu':
         score += 10
     skills = profile.get('skills', [])
-    if len(skills) >= 10:
-        score += 30
-    elif len(skills) >= 5:
-        score += 20
-    elif len(skills) >= 3:
-        score += 10
+    if len(skills) >= 10: score += 30
+    elif len(skills) >= 5: score += 20
+    elif len(skills) >= 3: score += 10
     domains = profile.get('domains', [])
-    if len(domains) >= 3:
-        score += 20
-    elif len(domains) >= 1:
-        score += 10
+    if len(domains) >= 3: score += 20
+    elif len(domains) >= 1: score += 10
     seniority = profile.get('seniority', '')
-    if seniority in ['senior', 'lead']:
-        score += 20
-    elif seniority == 'mid':
-        score += 10
-    else:
-        score += 5
+    if seniority in ['senior', 'lead']: score += 20
+    elif seniority == 'mid': score += 10
+    else: score += 5
     return min(score, 100)
 
 PLOTLY_TEMPLATE = "plotly_dark" if st.session_state.dark_mode else "plotly_white"
 CHART_COLORWAY = ["#8b5cf6", "#ec4899", "#3b82f6", "#f5a524", "#f43f5e", "#22c55e"]
-
+def chatbot_api(question, profile=None, history=None):
+    return api_call("POST", "/chatbot/", json={
+        "question": question,
+        "profile": profile,
+        "history": history or []
+    })
 def style_fig(fig, height=320):
     fig.update_layout(
         template=PLOTLY_TEMPLATE,
@@ -754,136 +902,392 @@ def generate_pdf_report(profile, score, recommendations=None, salary_pred=None):
 # ============================================================
 # SIDEBAR (scroll unique + organisation + espaces)
 # ============================================================
+# ============================================================
+# SIDEBAR AMÉLIORÉE (v6.0)
+# ============================================================
+
+
+
 with st.sidebar:
-    # ----- Branding -----
     st.markdown("""
-    <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.35rem;">
-        <div style="width:40px; height:40px; border-radius:11px; flex-shrink:0;
+    <style>
+        section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div { gap: 0.25rem !important; }
+        section[data-testid="stSidebar"] .element-container { margin-bottom: 0.1rem !important; }
+        section[data-testid="stSidebar"] hr { margin: 0.5rem 0 !important; }
+        section[data-testid="stSidebar"] .stButton > button {
+            padding: 0.35rem 0.8rem !important; font-size: 0.78rem !important; min-height: 32px !important;
+        }
+        section[data-testid="stSidebar"] .stTextInput > div > div > input {
+            padding: 0.35rem 0.6rem !important; font-size: 0.82rem !important; min-height: 32px !important;
+        }
+        section[data-testid="stSidebar"] .stSelectbox > div > div { min-height: 32px !important; font-size: 0.82rem !important; }
+        section[data-testid="stSidebar"] label { font-size: 0.78rem !important; }
+        section[data-testid="stSidebar"] .sidebar-section-label {
+            margin: 0.5rem 0 0.25rem 0.1rem !important; font-size: 0.62rem !important;
+        }
+        section[data-testid="stSidebar"] .sidebar-divider { margin: 0.5rem 0 !important; }
+        section[data-testid="stSidebar"] .sidebar-metrics { padding: 0.5rem 0.7rem !important; }
+        section[data-testid="stSidebar"] .sidebar-metrics .metric { padding: 0.2rem 0 !important; }
+        section[data-testid="stSidebar"] .sidebar-metrics .label,
+        section[data-testid="stSidebar"] .sidebar-metrics .value { font-size: 0.75rem !important; }
+        section[data-testid="stSidebar"] .sidebar-footer {
+            margin-top: 0.6rem !important; padding-top: 0.5rem !important; gap: 0.1rem !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.3rem;">
+        <div style="width:34px; height:34px; border-radius:9px; flex-shrink:0;
              background:linear-gradient(135deg,#8b5cf6,#ec4899);
              display:flex; align-items:center; justify-content:center;
-             font-size:1.2rem; box-shadow:0 6px 16px rgba(139,92,246,0.35);">📊</div>
-        <div style="line-height:1.15;">
-            <div style="font-family:'Sora',sans-serif; font-weight:800; font-size:1.15rem;
+             font-size:1rem; box-shadow:0 4px 12px rgba(139,92,246,0.3);">📊</div>
+        <div style="line-height:1.1;">
+            <div style="font-family:'Sora',sans-serif; font-weight:800; font-size:1rem;
                  background:linear-gradient(135deg,#8b5cf6,#ec4899);
-                 -webkit-background-clip:text; -webkit-text-fill-color:transparent;">
-                JobPulseAI
-            </div>
-            <div style="color:var(--text-3); font-size:0.65rem; letter-spacing:0.07em; font-weight:600;">
-                CAREER INTELLIGENCE · v{version}
+                 -webkit-background-clip:text; -webkit-text-fill-color:transparent;">JobPulseAI</div>
+            <div style="color:var(--text-3); font-size:0.6rem; letter-spacing:0.05em; font-weight:600;">
+                v6.1 · {lang}
             </div>
         </div>
     </div>
-    """.format(version=APP_VERSION), unsafe_allow_html=True)
+    """.format(lang=st.session_state.language), unsafe_allow_html=True)
 
-    # ----- Statut API -----
-    stats = get_global_stats()
+    # ========== 2. BARRE DE RECHERCHE GLOBALE ==========
+    search_input = st.text_input(
+        "🔍 Recherche",
+        placeholder="Offres, compétences, entreprises...",
+        key="search_bar",
+        label_visibility="collapsed",
+    )
+    if search_input:
+        st.session_state.search_query = search_input
+        # Feedback visuel
+        st.markdown(f"""
+        <div style="background:var(--surface-2); border-radius:8px; padding:0.5rem 0.7rem; margin-top:0.3rem;">
+            <div style="font-size:0.7rem; color:var(--text-3);">Recherche en cours pour :</div>
+            <div style="font-weight:600; font-size:0.85rem;">"{search_input}"</div>
+            <div style="font-size:0.7rem; color:var(--accent-1); margin-top:0.2rem;">Utilisez la page Marché pour voir les résultats</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+
+    # ========== 3. STATUT API AVEC LATENCE ==========
+    # ========== 3. STATUT API TEMPS RÉEL ==========
+    snapshot = get_realtime_snapshot()
+    stats = snapshot if snapshot else get_global_stats()
+    
     api_ok = stats is not None
     status_color = "#22c55e" if api_ok else "#f43f5e"
-    status_label = "API connectée" if api_ok else "API hors ligne"
+    status_label = tr("api_online") if api_ok else tr("api_offline")
+    
+    last_update = datetime.now().strftime("%H:%M:%S")
+    
     st.markdown(f"""
-    <div style="display:flex; align-items:center; gap:0.5rem; margin:0.4rem 0 0.6rem 0;">
-        <span style="width:8px; height:8px; border-radius:50%; background:{status_color};
-             box-shadow:0 0 0 3px {status_color}26; display:inline-block;"></span>
-        <span style="font-size:0.75rem; color:var(--text-2); font-weight:500;">{status_label}</span>
+    <div style="display:flex; align-items:center; justify-content:space-between; 
+         background:var(--surface-2); border-radius:8px; padding:0.35rem 0.6rem; margin:0.3rem 0;">
+        <div style="display:flex; align-items:center; gap:0.4rem;">
+            <span style="width:7px; height:7px; border-radius:50%; background:{status_color};
+                 box-shadow:0 0 0 2px {status_color}26; animation:pulse 2s infinite;"></span>
+            <span style="font-size:0.7rem; color:var(--text-2); font-weight:600;">{status_label}</span>
+        </div>
+        <span style="font-size:0.62rem; color:var(--text-3); font-weight:600;">🕒 {last_update}</span>
     </div>
+    <style>
+        @keyframes pulse {{
+            0%, 100% {{ opacity: 1; }}
+            50% {{ opacity: 0.5; }}
+        }}
+    </style>
     """, unsafe_allow_html=True)
 
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
 
-    # ----- Menu -----
-    st.markdown('<p class="sidebar-section-label">Menu</p>', unsafe_allow_html=True)
-    pages = ["🏠 Accueil", "📈 Marché", "📈 Tendances", "📄 CV", "🤝 Matching",
-             "🎯 Recommandations", "💰 Salaire", "📊 Comparateur", "📊 Analyse carrière", "🤖 Assistant", "📄 Rapport"]
-    
-    current_idx = pages.index(st.session_state.current_page) if st.session_state.current_page in pages else 0
-    page = st.radio(
-        "Navigation",
-        pages,
-        index=current_idx,
-        label_visibility="collapsed",
-        key="nav_radio"
-    )
-    st.session_state.current_page = page
+    # ========== 4. PROFIL UTILISATEUR (inchangé) ==========
+    profile = st.session_state.cv_profile
+    if profile:
+        name = profile.get('name', 'User')
+        initials = ''.join([w[0].upper() for w in name.split()[:2]]) if name else "?"
+        skills_count = len(profile.get('skills', []))
+        progress = min(100, (skills_count * 5) + (len(profile.get('domains', [])) * 10) + 20)
+
+        st.markdown(f"""
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px;
+                    padding:0.55rem 0.65rem; margin:0.2rem 0 0.3rem 0;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <div style="width:30px; height:30px; border-radius:50%;
+                     background:linear-gradient(135deg,#8b5cf6,#ec4899);
+                     display:flex; align-items:center; justify-content:center;
+                     font-weight:700; color:white; font-size:0.75rem; flex-shrink:0;">{initials}</div>
+                <div style="flex:1; min-width:0;">
+                    <div style="font-weight:700; font-size:0.78rem; overflow:hidden; 
+                         text-overflow:ellipsis; white-space:nowrap;">{name}</div>
+                    <div style="font-size:0.65rem; color:var(--text-3);">{skills_count} {tr("skills").lower()}</div>
+                </div>
+            </div>
+            <div style="margin-top:0.4rem;">
+                <div style="display:flex; justify-content:space-between; font-size:0.62rem; 
+                     color:var(--text-3); margin-bottom:0.15rem;">
+                    <span>{tr("profile_complete")}</span>
+                    <span style="font-weight:700; color:var(--accent-1);">{progress}%</span>
+                </div>
+                <div style="height:4px; background:var(--surface-2); border-radius:2px; overflow:hidden;">
+                    <div style="height:100%; width:{progress}%; 
+                         background:linear-gradient(90deg,#8b5cf6,#ec4899); border-radius:2px;"></div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div style="background:var(--surface); border:1px dashed var(--border); border-radius:10px;
+                    padding:0.5rem; text-align:center; margin:0.2rem 0 0.3rem 0;">
+            <div style="font-size:1.1rem; margin-bottom:0.1rem;">👤</div>
+            <div style="font-size:0.7rem; color:var(--text-2); font-weight:600;">{tr("no_cv")}</div>
+            <div style="font-size:0.62rem; color:var(--text-3);">{tr("load_cv")}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
 
-    # ----- Préférences -----
-    st.markdown('<p class="sidebar-section-label">Préférences</p>', unsafe_allow_html=True)
+    # ========== 5. NOTIFICATIONS TEMPS RÉEL ==========
+    realtime_notif = snapshot.get("notifications", 0) if snapshot else 0
+    
+    # Vérifier si nouvelles notifs (par rapport au dernier compteur vu)
+    if "last_seen_notif" not in st.session_state:
+        st.session_state.last_seen_notif = 0
+    
+    has_new = realtime_notif > st.session_state.last_seen_notif
+    
+    # Afficher toujours l'icône de notification
+    col_n1, col_n2 = st.columns([3, 1])
+    with col_n1:
+        st.markdown(f'<p class="sidebar-section-label" style="margin:0;">🔔 {tr("notifications")}</p>', unsafe_allow_html=True)
+    with col_n2:
+        if realtime_notif > 0:
+            pulse_css = "animation:pulse 1.5s infinite;" if has_new else ""
+            st.markdown(f"""
+            <div style="background:#ec4899; color:white; border-radius:999px; text-align:center;
+                 font-size:0.6rem; font-weight:700; padding:0.1rem 0.4rem; {pulse_css}">{realtime_notif}</div>
+            """, unsafe_allow_html=True)
+    
+    if realtime_notif > 0:
+        latest = snapshot.get("latest_title", "") if snapshot else ""
+        st.markdown(f"""
+        <div style="background:var(--surface-2); border-radius:8px; padding:0.4rem 0.55rem;
+                    margin:0.2rem 0; border-left:3px solid #ec4899;">
+            <div style="font-size:0.7rem; font-weight:600;">📢 {realtime_notif} {tr("new_offers")}</div>
+            <div style="font-size:0.62rem; color:var(--text-3); margin-top:0.15rem;">
+                {latest[:50] + "..." if len(latest) > 50 else latest}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button(f"✅ {tr('mark_read')}", key="clear_notifs", use_container_width=True):
+            st.session_state.last_seen_notif = realtime_notif
+            st.rerun()
+    else:
+        st.caption(tr("no_notifications"))
 
-    dark_mode = st.toggle("🌙 Mode sombre", value=st.session_state.dark_mode)
+    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+    
+    # ========== 6. MENU ==========
+    st.markdown(f'<p class="sidebar-section-label">📋 {tr("menu")}</p>', unsafe_allow_html=True)
+    page_labels = [tr("page_home"), tr("page_market"), tr("page_cv"),
+                   tr("page_matching"), tr("page_recommendations"), tr("page_salary"),
+                   tr("page_comparator"), tr("page_career"), tr("page_assistant"), tr("page_report")]
+    pages_internal = ["🏠 Accueil", "📄 CV", "🤝 Matching",
+                      "🎯 Recommandations", "💰 Salaire", "📊 Comparateur", 
+                      "📊 Analyse carrière", "🤖 Assistant", "📄 Rapport"]
+    current_idx = pages_internal.index(st.session_state.current_page) if st.session_state.current_page in pages_internal else 0
+    selected_label = st.radio("Navigation", page_labels, index=current_idx,
+                              label_visibility="collapsed", key="nav_radio")
+    if selected_label in page_labels:
+        st.session_state.current_page = pages_internal[page_labels.index(selected_label)]
+
+    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+
+    # ========== 7. ACTIONS RAPIDES ==========
+    st.markdown(f'<p class="sidebar-section-label">⚡ {tr("quick_actions")}</p>', unsafe_allow_html=True)
+    qa_col1, qa_col2 = st.columns(2)
+    with qa_col1:
+        if st.button("📄 CV", key="qa_cv", use_container_width=True):
+            st.session_state["nav"] = "📄 CV"
+            st.session_state.recent_actions.append(("📄 CV", datetime.now().strftime("%H:%M")))
+            st.rerun()
+    with qa_col2:
+        if st.button("🤝 Match", key="qa_match", use_container_width=True):
+            st.session_state["nav"] = "🤝 Matching"
+            st.session_state.recent_actions.append(("🤝 Matching", datetime.now().strftime("%H:%M")))
+            st.rerun()
+    qa_col3, qa_col4 = st.columns(2)
+    with qa_col3:
+        if st.button("💰 Salary", key="qa_salary", use_container_width=True):
+            st.session_state["nav"] = "💰 Salaire"
+            st.session_state.recent_actions.append(("💰 Salaire", datetime.now().strftime("%H:%M")))
+            st.rerun()
+    with qa_col4:
+        if st.button("📄 Report", key="qa_report", use_container_width=True):
+            st.session_state["nav"] = "📄 Rapport"
+            st.session_state.recent_actions.append(("📄 Rapport", datetime.now().strftime("%H:%M")))
+            st.rerun()
+
+    # ========== 8. HISTORIQUE RÉCENT ==========
+    if st.session_state.recent_actions:
+        st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+        st.markdown(f'<p class="sidebar-section-label">📜 {tr("recent")}</p>', unsafe_allow_html=True)
+        for action, ts in st.session_state.recent_actions[-2:][::-1]:
+            st.markdown(f"""
+            <div style="display:flex; justify-content:space-between; align-items:center;
+                 padding:0.25rem 0.5rem; background:var(--surface-2); border-radius:5px;
+                 margin-bottom:0.15rem; font-size:0.7rem;">
+                <span style="font-weight:600;">{action}</span>
+                <span style="color:var(--text-3); font-size:0.62rem;">{ts}</span>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+
+    # ========== 9. PRÉFÉRENCES ==========
+    st.markdown(f'<p class="sidebar-section-label">⚙️ {tr("preferences")}</p>', unsafe_allow_html=True)
+    dark_mode = st.toggle(f"🌙 {tr('dark_mode')}", value=st.session_state.dark_mode)
     if dark_mode != st.session_state.dark_mode:
         st.session_state.dark_mode = dark_mode
         st.rerun()
 
-    auto_refresh = st.toggle("🔄 Auto-refresh (15s)", value=st.session_state.auto_refresh)
+    auto_refresh = st.toggle(f"🔄 {tr('auto_refresh')}", value=st.session_state.auto_refresh)
     st.session_state.auto_refresh = auto_refresh
+    
     if auto_refresh:
-        st.caption("📡 Rafraîchissement automatique toutes les 15s.")
-        st.markdown('<meta http-equiv="refresh" content="15">', unsafe_allow_html=True)
+        st.markdown("""
+        <script>
+            setTimeout(function() {
+                window.location.reload();
+            }, 15000);
+        </script>
+        """, unsafe_allow_html=True)
+        st.caption(f"🟢 {tr('auto_refresh')} · 15s")
+
+
+    def _on_lang_change():
+        """Callback exécuté AVANT le rerun, met à jour la langue."""
+        val = st.session_state.get("lang_select", "🇫🇷 Français")
+        st.session_state.language = "FR" if "FR" in val else "EN"
+
+    lang_options = ["🇫🇷 Français", "🇬🇧 English"]
+    current_lang_idx = 0 if st.session_state.language == "FR" else 1
+    st.selectbox(
+        f"🌐 {tr('language')}",
+        options=lang_options,
+        index=current_lang_idx,
+        key="lang_select",
+        on_change=_on_lang_change,
+    )
+
+    accent_options = {"violet": "🟣 Violet", "bleu": "🔵 Bleu", "rose": "🩷 Rose", "emeraude": "🟢 Émeraude"}
+    accent_keys = list(accent_options.keys())
+    current_accent_idx = accent_keys.index(st.session_state.accent_theme) if st.session_state.accent_theme in accent_keys else 0
+    selected_accent = st.selectbox(f"🎨 {tr('accent_color')}", options=list(accent_options.values()),
+                                    index=current_accent_idx, key="accent_select")
+    for key, label in accent_options.items():
+        if label == selected_accent and key != st.session_state.accent_theme:
+            st.session_state.accent_theme = key
+            st.rerun()
 
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
 
-    # ----- En un coup d'œil -----
-    st.markdown('<p class="sidebar-section-label">En un coup d\'œil</p>', unsafe_allow_html=True)
-
+    # ========== 10. EN UN COUP D'ŒIL ==========
+    # ========== 10. EN UN COUP D'ŒIL + MINI-GRAPHIQUE TEMPS RÉEL ==========
+    st.markdown(f'<p class="sidebar-section-label">📊 {tr("overview")}</p>', unsafe_allow_html=True)
     if stats:
         st.markdown(f"""
         <div class="sidebar-metrics">
-            <div class="metric"><span class="label">📋 Offres</span><span class="value">{stats.get('total_jobs', 0):,}</span></div>
-            <div class="metric"><span class="label">🧠 Compétences</span><span class="value">{stats.get('unique_skills', 0):,}</span></div>
-            <div class="metric"><span class="label">🏢 Entreprises</span><span class="value">{stats.get('unique_companies', 0):,}</span></div>
-            <div class="metric"><span class="label">🌍 Taux remote</span><span class="value">{stats.get('remote_percent', 0):.1f}%</span></div>
+            <div class="metric"><span class="label">📋 {tr("offers")}</span><span class="value">{stats.get('total_jobs', 0):,}</span></div>
+            <div class="metric"><span class="label">🧠 {tr("skills")}</span><span class="value">{stats.get('unique_skills', 0):,}</span></div>
+            <div class="metric"><span class="label">🏢 {tr("companies")}</span><span class="value">{stats.get('unique_companies', 0):,}</span></div>
+            <div class="metric"><span class="label">🌍 {tr("remote_rate")}</span><span class="value">{stats.get('remote_percent', 0):.1f}%</span></div>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Mini-graphique temps réel
+        activity = snapshot.get("activity", [0]*7) if snapshot else [0]*7
+        labels = snapshot.get("activity_labels", [""]*7) if snapshot else [""]*7
+        
+        if any(activity):
+            fig_spark = go.Figure()
+            fig_spark.add_trace(go.Scatter(
+                x=labels,
+                y=activity,
+                mode='lines+markers',
+                line=dict(color='#8b5cf6', width=2),
+                marker=dict(size=4, color='#ec4899'),
+                fill='tozeroy',
+                fillcolor='rgba(139,92,246,0.15)',
+                hovertemplate='%{x}<br>%{y} offres<extra></extra>',
+            ))
+            fig_spark.update_layout(
+                height=80,
+                margin=dict(l=0, r=0, t=5, b=0),
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                showlegend=False,
+                xaxis=dict(visible=True, tickfont=dict(size=8, color='#65658a'), showgrid=False),
+                yaxis=dict(visible=False),
+                hoverlabel=dict(bgcolor="#1e293b", font_size=10),
+            )
+            st.plotly_chart(fig_spark, use_container_width=True, config={'displayModeBar': False})
+            st.caption(f"📈 {tr('activity_7d')}")
+        else:
+            st.caption(f"⚠️ {tr('data_unavailable')}")
     else:
-        st.info("Données indisponibles — vérifie que l'API tourne.", icon="⚠️")
-
-    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
-
-    # ----- Session -----
-    st.markdown('<p class="sidebar-section-label">Session</p>', unsafe_allow_html=True)
-
-    profile = st.session_state.cv_profile
-    if profile:
-        name = profile.get('name', 'Inconnu')
-        skills_count = len(profile.get('skills', []))
-        st.markdown(f"""
-        <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px;
-                    padding:0.7rem 0.9rem; margin:0.25rem 0 0.6rem 0;">
-            <div style="font-size:0.72rem; color:var(--text-3); margin-bottom:0.25rem;">📄 CV chargé</div>
-            <div style="font-weight:600; font-size:0.92rem;">{name}</div>
-            <div style="font-size:0.76rem; color:var(--text-2); margin-top:0.15rem;">{skills_count} compétences</div>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.caption("Aucun CV chargé")
-
+        st.caption(f"⚠️ {tr('data_unavailable')}")
+    
+    # ========== 11. SESSION & RESET ==========
+    st.markdown(f'<p class="sidebar-section-label">🔧 {tr("session")}</p>', unsafe_allow_html=True)
     col_a, col_b = st.columns(2)
     with col_a:
-        if st.button("🗑️ Reset CV", use_container_width=True, key="reset_cv"):
+        if st.button(f"🗑️ {tr('reset_cv')}", use_container_width=True, key="reset_cv"):
             st.session_state.cv_profile = None
             st.session_state.gap_result = None
             st.session_state.match_result = None
-            st.success("Profil CV réinitialisé")
+            st.success("OK")
             st.rerun()
     with col_b:
-        if st.button("🧹 Cache", use_container_width=True, key="clear_cache"):
+        if st.button(f"🧹 {tr('cache')}", use_container_width=True, key="clear_cache"):
             st.cache_data.clear()
-            st.success("Cache vidé")
+            st.success("OK")
             st.rerun()
-
-    st.markdown("<div style='height:0.45rem'></div>", unsafe_allow_html=True)
-
-    if st.button("🔄 Actualiser les données", key="refresh_sidebar", use_container_width=True):
+    if st.button(f"🔄 {tr('refresh')}", key="refresh_sidebar", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
 
-    # ----- Footer -----
+    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+
+    # AIDE
+    st.markdown(f'<p class="sidebar-section-label">❓ {tr("help")}</p>', unsafe_allow_html=True)
+    help_col1, help_col2 = st.columns(2)
+    with help_col1:
+        st.markdown("""
+        <a href="https://jobpulseai-ux5q.onrender.com/docs" target="_blank" 
+           style="display:block; padding:0.35rem; background:var(--surface-2); 
+           border-radius:6px; text-align:center; text-decoration:none; 
+           color:var(--text-1); font-size:0.68rem; font-weight:600;">📚 API</a>
+        """, unsafe_allow_html=True)
+    with help_col2:
+        st.markdown("""
+        <a href="https://github.com" target="_blank"
+           style="display:block; padding:0.35rem; background:var(--surface-2); 
+           border-radius:6px; text-align:center; text-decoration:none; 
+           color:var(--text-1); font-size:0.68rem; font-weight:600;">🐙 GitHub</a>
+        """, unsafe_allow_html=True)
+
+    # ========== 13. FOOTER ==========
     st.markdown(f"""
     <div class="sidebar-footer">
-        <div>🔗 {API_BASE_URL}</div>
-        <div>🕒 {datetime.now().strftime('%d/%m/%Y %H:%M')}</div>
-        <div>v{APP_VERSION}</div>
+        <div style="font-size:0.62rem;">🔗 {API_BASE_URL.replace('https://', '').replace('http://', '')}</div>
+        <div style="font-size:0.62rem;">🕒 {datetime.now().strftime('%d/%m/%Y %H:%M')}</div>
+        <div style="font-size:0.62rem;">v{APP_VERSION} · {st.session_state.language}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -907,69 +1311,147 @@ def kpi_card(col, icon, label, value, trend=None, trend_dir="up", accent="#8b5cf
         """, unsafe_allow_html=True)
 
 def page_accueil():
-    st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-    st.markdown('<div class="main-header">📊 Tableau de bord – Performance du recrutement</div>', unsafe_allow_html=True)
-    st.caption("Comprenez la performance de votre recrutement en temps réel.")
+    st.caption(f"📅 {tr('last_update')} : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    st.markdown(f'<div class="main-header">{tr("dashboard_title")}</div>', unsafe_allow_html=True)
+    st.caption(tr("dashboard_subtitle"))
 
     if st.session_state.get("auto_refresh", False) and random.random() < 0.3:
         st.toast("📢 Une nouvelle offre correspond à votre profil !", icon="🎯")
 
     stats = get_global_stats()
     if not stats:
-        st.warning("Impossible de charger les statistiques.")
+        st.warning(tr("data_unavailable"))
         return
 
-    variation = random.randint(-5, 5)
-    total_jobs = stats.get('total_jobs', 0) + variation
-
+    # Utiliser les données temps réel
+    snapshot = get_realtime_snapshot()
+    realtime_stats = snapshot if snapshot else stats
+    
+    # Variation basée sur l'activité réelle (différence entre les 2 derniers jours)
+    activity = realtime_stats.get("activity", [0, 0])
+    if len(activity) >= 2 and activity[-2] > 0:
+        variation = int(((activity[-1] - activity[-2]) / activity[-2]) * 100)
+    else:
+        variation = 0
+    
+    total_jobs = realtime_stats.get('total_jobs', 0)
+    st.markdown(f"### {tr('indicators')}")
     col1, col2, col3, col4 = st.columns(4)
-    kpi_card(col1, "📊", "Offres actives", f"{total_jobs:,}", f"{variation:+d}%", "up", "#8b5cf6")
-    kpi_card(col2, "⏳", "Temps de matching moyen", "7.3 j", "2%", "down", "#3b82f6")
-    kpi_card(col3, "✅", "Taux de recommandation", "92%", None, "up", "#22c55e")
-    kpi_card(col4, "🤖", "Prédiction IA (acceptation)", "86%", "4%", "up", "#ec4899")
+    kpi_card(col1, "📊", tr("active_offers"), f"{total_jobs:,}", f"{variation:+d}%", "up", "#8b5cf6")
+    kpi_card(col2, "⏳", tr("matching_time"), "7.3 j", "2%", "down", "#3b82f6")
+    kpi_card(col3, "✅", tr("reco_rate"), "92%", None, "up", "#22c55e")
+    kpi_card(col4, "🤖", tr("ai_prediction"), "86%", "4%", "up", "#ec4899")
 
-    st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown(f"### {tr('performance_section')}")
 
-    col_left, col_right = st.columns(2)
+    col_left, col_right = st.columns([1, 1])
     with col_left:
-        st.subheader("🎯 Précision du matching IA par département")
-        depts = ["Design", "Marketing", "Engineering", "Sales"]
-        accuracy = [92.67, 78.5, 85.3, 72.1]
-        fig = px.bar(x=accuracy, y=depts, orientation='h',
-                     color=accuracy, color_continuous_scale=["#3b82f6", "#8b5cf6"],
-                     title="Précision du matching par département")
-        fig.update_layout(showlegend=False, coloraxis_showscale=False)
-        st.plotly_chart(style_fig(fig, 300), use_container_width=True)
+        with st.container(border=True):
+            st.markdown(f"#### {tr('matching_precision')}")
+            depts = ["Design", "Marketing", "Engineering", "Sales"]
+            accuracy = [92.67, 78.5, 85.3, 72.1]
+            fig = px.bar(x=accuracy, y=depts, orientation='h',
+                         color=accuracy, color_continuous_scale=["#3b82f6", "#8b5cf6"])
+            fig.update_layout(showlegend=False, coloraxis_showscale=False)
+            st.plotly_chart(style_fig(fig, 260), use_container_width=True)
 
-        st.subheader("🏢 Recrutements par département")
-        hires = [28, 35, 42, 18]
-        fig2 = px.bar(x=depts, y=hires, color=depts,
-                      color_discrete_sequence=CHART_COLORWAY,
-                      title="Recrutements par département")
-        fig2.update_layout(showlegend=False)
-        st.plotly_chart(style_fig(fig2, 300), use_container_width=True)
+        with st.container(border=True):
+            st.markdown(f"#### {tr('hires_by_dept')}")
+            hires = [28, 35, 42, 18]
+            fig2 = px.bar(x=depts, y=hires, color=depts, color_discrete_sequence=CHART_COLORWAY)
+            fig2.update_layout(showlegend=False)
+            st.plotly_chart(style_fig(fig2, 260), use_container_width=True)
+
+        with st.container(border=True):
+            st.markdown(f"#### {tr('correspondence_dist')}")
+            labels = ['Excellente (92%)', 'Modérée (36%)', 'Bonne (16%)', 'Faible (5%)']
+            values_pie = [92.67, 36, 16, 5]
+            fig4 = px.pie(values=values_pie, names=labels, hole=0.55, color_discrete_sequence=CHART_COLORWAY)
+            st.plotly_chart(style_fig(fig4, 260), use_container_width=True)
 
     with col_right:
-        st.subheader("🔄 Conversion des candidats")
-        stages = ["Shortlistés par IA", "Entretiens", "Offres envoyées", "Offres acceptées"]
-        values = [310, 310, 65, 42]
-        fig3 = go.Figure(go.Funnel(
-            y=stages,
-            x=values,
-            textinfo="value+percent initial",
-            marker=dict(color=["#8b5cf6", "#3b82f6", "#ec4899", "#22c55e"])
-        ))
-        st.plotly_chart(style_fig(fig3, 350), use_container_width=True)
+        with st.container(border=True):
+            st.markdown(f"#### {tr('conversion')}")
+            stages = ["Shortlistés", "Entretiens", "Offres", "Acceptées"]
+            values_funnel = [310, 310, 65, 42]
+            fig3 = go.Figure(go.Funnel(
+                y=stages, x=values_funnel, textinfo="value+percent initial",
+                marker=dict(color=["#8b5cf6", "#3b82f6", "#ec4899", "#22c55e"])
+            ))
+            st.plotly_chart(style_fig(fig3, 350), use_container_width=True)
 
-        st.subheader("📈 Distribution des correspondances")
-        labels = ['Excellente (92%)', 'Modérée (36%)', 'Bonne (16%)', 'Faible (5%)']
-        values = [92.67, 36, 16, 5]
-        fig4 = px.pie(values=values, names=labels, hole=0.55,
-                      color_discrete_sequence=CHART_COLORWAY)
-        st.plotly_chart(style_fig(fig4, 280), use_container_width=True)
+    st.markdown("---")
+    st.markdown(f"### {tr('market_section')}")
+
+    col_a, col_b = st.columns(2)
+    with col_a:
+        with st.container(border=True):
+            st.markdown(f"#### {tr('sectors_dist')}")
+            sectors = api_call("GET", "/stats/sectors/distribution")
+            if sectors:
+                df_sectors = pd.DataFrame(sectors)
+                fig = px.pie(df_sectors, values='count', names='sector', hole=0.4)
+                st.plotly_chart(style_fig(fig, 350), use_container_width=True)
+            else:
+                st.info(tr("data_unavailable"))
+
+    with col_b:
+        with st.container(border=True):
+            st.markdown(f"#### {tr('salaries_by_sector')}")
+            sector_salaries = api_call("GET", "/stats/sectors/salaries")
+            if sector_salaries:
+                df_ss = pd.DataFrame(sector_salaries)
+                fig = px.bar(df_ss, x='sector', y='avg_salary',
+                             color='avg_salary', color_continuous_scale=["#3b82f6", "#8b5cf6"])
+                fig.update_layout(coloraxis_showscale=False, xaxis_tickangle=-45)
+                st.plotly_chart(style_fig(fig, 350), use_container_width=True)
+            else:
+                st.info(tr("data_unavailable"))
+
+    col_c, col_d = st.columns(2)
+    with col_c:
+        with st.container(border=True):
+            st.markdown(f"#### {tr('top_cities')}")
+            locations = api_call("GET", "/stats/locations/top?limit=15")
+            if locations:
+                df_loc = pd.DataFrame(locations)
+                fig = px.bar(df_loc, x='count', y='city', orientation='h',
+                             color='count', color_continuous_scale='Blues')
+                fig.update_layout(showlegend=False, coloraxis_showscale=False,
+                                  yaxis=dict(autorange="reversed"))
+                st.plotly_chart(style_fig(fig, 400), use_container_width=True)
+            else:
+                st.info(tr("data_unavailable"))
+
+    with col_d:
+        with st.container(border=True):
+            st.markdown(f"#### {tr('remote_by_city')}")
+            remote_loc = api_call("GET", "/stats/locations/remote?limit=10")
+            if remote_loc:
+                df_rl = pd.DataFrame(remote_loc)
+                fig = px.bar(df_rl, x='city', y='remote_rate',
+                             color='remote_rate', color_continuous_scale=["#f5a524", "#22c55e"])
+                fig.update_layout(coloraxis_showscale=False, xaxis_tickangle=-45)
+                st.plotly_chart(style_fig(fig, 400), use_container_width=True)
+            else:
+                st.info(tr("data_unavailable"))
+
+    with st.container(border=True):
+        st.markdown(f"#### {tr('cooccurrence')}")
+        cooc = api_call("GET", "/stats/skills/cooccurrence?nrows=300")
+        if cooc and cooc.get('skills'):
+            df_cooc = pd.DataFrame(cooc['matrix'], index=cooc['skills'], columns=cooc['skills'])
+            fig = px.imshow(df_cooc, color_continuous_scale='Purples', aspect='auto')
+            fig.update_layout(height=550)
+            st.plotly_chart(style_fig(fig, 550), use_container_width=True)
+        else:
+            st.info(tr("data_unavailable"))
+
 
 def page_marche():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    st.markdown(f'<div class="main-header">{tr("market_title")}</div>', unsafe_allow_html=True)
     st.markdown('<div class="main-header">📈 Analyse du marché</div>', unsafe_allow_html=True)
 
     with st.spinner("Chargement des données du marché..."):
@@ -1004,112 +1486,12 @@ def page_marche():
         fig = px.pie(values=list(levels.values()), names=list(levels.keys()), title="Niveaux d'expérience",
                      color_discrete_sequence=CHART_COLORWAY)
         st.plotly_chart(style_fig(fig), use_container_width=True)
-# Dans page_marche()
-st.subheader("🏢 Répartition par secteur")
-sectors = api_call("GET", "/stats/sectors/distribution")
-if sectors:
-    df_sectors = pd.DataFrame(sectors)
-    fig = px.pie(df_sectors, values='count', names='sector', 
-                 title="Offres par secteur", hole=0.4)
-    st.plotly_chart(style_fig(fig), use_container_width=True)
-
-st.subheader("💰 Salaire moyen par secteur")
-sector_salaries = api_call("GET", "/stats/sectors/salaries")
-if sector_salaries:
-    df_ss = pd.DataFrame(sector_salaries)
-    fig = px.bar(df_ss, x='sector', y='avg_salary', 
-                 title="Salaire moyen par secteur")
-    st.plotly_chart(style_fig(fig), use_container_width=True)
-st.subheader("🌍 Top villes qui recrutent")
-locations = api_call("GET", "/stats/locations/top?limit=15")
-if locations:
-    df_loc = pd.DataFrame(locations)
-    fig = px.bar(df_loc, x='count', y='city', orientation='h',
-                 title="Top 15 villes", color='count', color_continuous_scale='Blues')
-    fig.update_layout(showlegend=False, coloraxis_showscale=False)
-    st.plotly_chart(style_fig(fig, 450), use_container_width=True)
-
-st.subheader("🏠 Taux de remote par ville")
-remote_loc = api_call("GET", "/stats/locations/remote?limit=10")
-if remote_loc:
-    df_rl = pd.DataFrame(remote_loc)
-    fig = px.bar(df_rl, x='city', y='remote_rate',
-                 title="Taux de remote par ville (%)")
-    st.plotly_chart(style_fig(fig), use_container_width=True)
-
-st.subheader("🔥 Matrice de co-occurrence des compétences")
-cooc = api_call("GET", "/stats/skills/cooccurrence?nrows=300")
-if cooc and cooc.get('skills'):
-    df_cooc = pd.DataFrame(cooc['matrix'], 
-                          index=cooc['skills'], 
-                          columns=cooc['skills'])
-    fig = px.imshow(df_cooc, 
-                    color_continuous_scale='Purples',
-                    title="Co-occurrence des compétences (Top 15)")
-    fig.update_layout(height=600)
-    st.plotly_chart(style_fig(fig, 600), use_container_width=True)
 
 
-
-
-def page_tendances():
-    st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-    st.markdown('<div class="main-header">📈 Tendances du marché</div>', unsafe_allow_html=True)
-    st.write("Évolution des salaires, du remote et des compétences dans le temps.")
-
-    @st.cache_data(ttl=300)
-    def load_trend_data(nrows=200):
-        try:
-            df = pd.read_csv("data/raw/postings.csv", nrows=nrows, low_memory=False)
-            if 'listed_time' in df.columns:
-                df['listed_time'] = pd.to_datetime(df['listed_time'], errors='coerce')
-            return df
-        except:
-            return pd.DataFrame()
-
-    df = load_trend_data(500)
-    if df.empty:
-        st.warning("Aucune donnée de tendance disponible. Utilisation de données simulées.")
-        months = pd.date_range('2023-01', periods=12, freq='M')
-        salaries = np.random.normal(80000, 10000, 12) + np.arange(12)*500
-        remote = 0.3 + np.arange(12)*0.02
-        df_sim = pd.DataFrame({'month': months.strftime('%Y-%m'), 'salary': salaries, 'remote': remote})
-        fig = px.line(df_sim, x='month', y='salary', title='Simulation tendance des salaires',
-                      color_discrete_sequence=["#8b5cf6"])
-        st.plotly_chart(style_fig(fig), use_container_width=True)
-        fig2 = px.line(df_sim, x='month', y='remote', title='Simulation tendance remote',
-                       color_discrete_sequence=["#ec4899"])
-        st.plotly_chart(style_fig(fig2), use_container_width=True)
-        return
-
-    date_col = 'listed_time' if 'listed_time' in df.columns else None
-    if date_col:
-        df = df.dropna(subset=[date_col])
-        df = df.sort_values(date_col)
-        df['month'] = df[date_col].dt.to_period('M')
-
-        if 'normalized_salary' in df.columns:
-            monthly = df.groupby('month')['normalized_salary'].mean().reset_index()
-            monthly['month'] = monthly['month'].astype(str)
-            fig = px.line(monthly, x='month', y='normalized_salary',
-                          title='Évolution du salaire moyen normalisé',
-                          labels={'month': 'Mois', 'normalized_salary': 'Salaire moyen'},
-                          color_discrete_sequence=["#8b5cf6"])
-            st.plotly_chart(style_fig(fig), use_container_width=True)
-
-        if 'remote_allowed' in df.columns:
-            remote_over_time = df.groupby('month')['remote_allowed'].mean().reset_index()
-            remote_over_time['month'] = remote_over_time['month'].astype(str)
-            fig = px.line(remote_over_time, x='month', y='remote_allowed',
-                          title='Taux de remote dans le temps',
-                          labels={'month': 'Mois', 'remote_allowed': 'Proportion remote'},
-                          color_discrete_sequence=["#ec4899"])
-            st.plotly_chart(style_fig(fig), use_container_width=True)
-    else:
-        st.info("Colonne de date non trouvée.")
 
 def page_cv():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    st.markdown(f'<div class="main-header">{tr("cv_title")}</div>', unsafe_allow_html=True)
     st.markdown('<div class="main-header">📄 Analyse de CV</div>', unsafe_allow_html=True)
     uploaded = st.file_uploader("Choisissez votre CV (PDF)", type=["pdf"])
 
@@ -1158,6 +1540,7 @@ def page_cv():
 
 def page_matching():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    st.markdown(f'<div class="main-header">{tr("matching_title")}</div>', unsafe_allow_html=True)
     st.markdown('<div class="main-header">🤝 Matching CV / Offre</div>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
@@ -1215,6 +1598,7 @@ def page_matching():
 
 def page_recommandations():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    st.markdown(f'<div class="main-header">{tr("reco_title")}</div>', unsafe_allow_html=True)
     st.markdown('<div class="main-header">🎯 Recommandations d\'offres</div>', unsafe_allow_html=True)
 
     profile = st.session_state.cv_profile
@@ -1330,6 +1714,7 @@ def page_recommandations():
 
 def page_salaire():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    st.markdown(f'<div class="main-header">{tr("salary_title")}</div>', unsafe_allow_html=True)
     st.markdown("<div class='main-header'>💰 Prédiction de salaire</div>", unsafe_allow_html=True)
     st.write("Renseignez les caractéristiques du poste pour estimer le salaire.")
 
@@ -1390,6 +1775,7 @@ def page_salaire():
 
 def page_comparateur():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    st.markdown(f'<div class="main-header">{tr("comparator_title")}</div>', unsafe_allow_html=True)
     st.markdown('<div class="main-header">📊 Comparateur d\'offres</div>', unsafe_allow_html=True)
     st.write("Comparez deux offres d'emploi et leur adéquation avec votre profil.")
 
@@ -1482,6 +1868,7 @@ def page_comparateur():
 
 def page_analyse_carriere():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    st.markdown(f'<div class="main-header">{tr("career_title")}</div>', unsafe_allow_html=True)
     st.markdown('<div class="main-header">📊 Analyse de carrière</div>', unsafe_allow_html=True)
     profile = st.session_state.cv_profile
     if not profile:
@@ -1544,6 +1931,7 @@ def get_response(question, profile=None):
 
 def page_assistant():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    st.markdown(f'<div class="main-header">{tr("assistant_title")}</div>', unsafe_allow_html=True)
     st.markdown('<div class="main-header">🤖 Assistant carrière</div>', unsafe_allow_html=True)
     st.write("Posez vos questions sur les métiers, les compétences, les formations...")
 
@@ -1582,6 +1970,7 @@ def page_assistant():
 
 def page_rapport():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    st.markdown(f'<div class="main-header">{tr("report_title")}</div>', unsafe_allow_html=True)
     st.markdown('<div class="main-header">📄 Rapport personnalisé</div>', unsafe_allow_html=True)
     st.write("Générez un rapport PDF professionnel récapitulatif de votre analyse.")
 
@@ -1628,8 +2017,6 @@ if page == "🏠 Accueil":
     page_accueil()
 elif page == "📈 Marché":
     page_marche()
-elif page == "📈 Tendances":
-    page_tendances()
 elif page == "📄 CV":
     page_cv()
 elif page == "🤝 Matching":
@@ -1655,13 +2042,12 @@ st.markdown("---")
 cols = st.columns([2, 1, 1.5])
 
 with cols[0]:
-    st.markdown("""
+    now = datetime.now()
+    st.markdown(f"""
     <div style="margin-bottom: 0.5rem;">
         <span style="font-family:'Sora',sans-serif; font-size:1.5rem; font-weight:800;
              background: linear-gradient(135deg, #8b5cf6, #ec4899);
-             -webkit-background-clip:text; -webkit-text-fill-color:transparent;">
-            JobPulseAI
-        </span>
+             -webkit-background-clip:text; -webkit-text-fill-color:transparent;">JobPulseAI</span>
     </div>
     <p style="color:var(--text-3); font-size:0.9rem; line-height:1.6; max-width:300px;">
         AI-Powered Career Intelligence · Aide les talents à trouver leur voie et les entreprises à recruter plus intelligemment.
@@ -1669,14 +2055,17 @@ with cols[0]:
     <div style="margin-top:0.5rem; font-size:0.8rem; color:var(--text-3);">
         MMXXVI · JobPulseAI Co. · Public Benefit Co.
     </div>
+    <div style="margin-top:0.5rem; font-size:0.75rem; color:var(--accent-1); font-weight:600;">
+        🕒 {now.strftime('%d/%m/%Y %H:%M:%S')}
+    </div>
     """, unsafe_allow_html=True)
-
+    
 with cols[1]:
-    st.markdown("**Produit**")
+    st.markdown(f"**{tr('product')}**")
     if st.button("Home", key="footer_home", use_container_width=True):
         st.session_state["nav"] = "🏠 Accueil"
         st.rerun()
-    if st.button("Marché", key="footer_market", use_container_width=True):
+    if st.button("Marché" if st.session_state.language == "FR" else "Market", key="footer_market", use_container_width=True):
         st.session_state["nav"] = "📈 Marché"
         st.rerun()
     if st.button("CV", key="footer_cv", use_container_width=True):
@@ -1685,25 +2074,25 @@ with cols[1]:
     if st.button("Matching", key="footer_matching", use_container_width=True):
         st.session_state["nav"] = "🤝 Matching"
         st.rerun()
-    if st.button("Recommandations", key="footer_reco", use_container_width=True):
+    if st.button(tr("page_recommendations").replace("🎯 ", ""), key="footer_reco", use_container_width=True):
         st.session_state["nav"] = "🎯 Recommandations"
         st.rerun()
 
 with cols[2]:
-    st.markdown("**Recevoir les mises à jour**")
-    st.caption("Recevez les dernières analyses et offres recommandées.")
-    email = st.text_input("Email", placeholder="Votre e-mail", key="footer_email", label_visibility="collapsed")
-    if st.button("Je m'abonne", key="footer_subscribe", use_container_width=True):
+    st.markdown(f"**{tr('updates')}**")
+    st.caption(tr("privacy"))
+    email = st.text_input(tr("email_placeholder"), placeholder=tr("email_placeholder"),
+                          key="footer_email", label_visibility="collapsed")
+    if st.button(tr("subscribe"), key="footer_subscribe", use_container_width=True):
         if email:
-            st.success(f"✅ Merci {email} ! Vous recevrez nos mises à jour.")
+            st.success(f"✅ Merci {email} !" if st.session_state.language == "FR" else f"✅ Thanks {email}!")
         else:
-            st.warning("Veuillez entrer une adresse email.")
-    st.caption("En vous inscrivant, vous acceptez notre politique de confidentialité.")
+            st.warning("Email requis" if st.session_state.language == "FR" else "Email required")
 
 st.markdown("---")
 col_left, col_right = st.columns([2, 1])
 with col_left:
-    st.caption("© 2026 JobPulseAI · Politique de confidentialité · Conditions d'utilisation")
+    st.caption(tr("all_rights"))
 with col_right:
     st.markdown("""
     <div style="display:flex; gap:0.8rem; justify-content:flex-end; font-size:1.1rem;">
