@@ -64,12 +64,11 @@ class Conversation(Base):
     __tablename__ = "conversations"
 
     id = Column(String(50), primary_key=True, index=True)
-    user_id = Column(String(100), default="default", index=True)
+    user_id = Column(String(100), default="default", index=True)  # 🔐 clé utilisateur
     title = Column(String(200), default="Nouvelle conversation")
-    pinned = Column(Integer, default=0)  # 0 ou 1
+    pinned = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
-
 
 class Message(Base):
     """Message d'une conversation."""
