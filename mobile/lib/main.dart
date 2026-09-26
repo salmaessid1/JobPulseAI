@@ -1,17 +1,16 @@
 // lib/main.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/home_screen.dart';
 import 'screens/cv_screen.dart';
 import 'screens/matching_screen.dart';
 import 'screens/recommendations_screen.dart';
-import 'screens/salary_screen.dart';
-import 'screens/chat_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/auth/login_screen.dart';
 
-import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'models/job_models.dart';
 import 'models/user_model.dart';
@@ -54,7 +53,7 @@ class JobPulseApp extends StatelessWidget {
 }
 
 // ============================================================
-// AUTH GATE : Vérifie si l'utilisateur est connecté
+// AUTH GATE
 // ============================================================
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -119,7 +118,7 @@ class _AuthGateState extends State<AuthGate> {
 }
 
 // ============================================================
-// ÉCRAN PRINCIPAL (après connexion)
+// ÉCRAN PRINCIPAL
 // ============================================================
 class MainScreen extends StatefulWidget {
   final User user;
@@ -137,23 +136,14 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _index = 0;
-  final ApiService _apiService = ApiService();
-
-  @override
-  void dispose() {
-    _apiService.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final screens = [
       const HomeScreen(),
-      const ChatScreen(),
       const CvScreen(),
       const MatchingScreen(),
       const RecommendationsScreen(),
-      const SalaryScreen(),
       ProfileScreen(user: widget.user, onLogout: widget.onLogout),
     ];
 
@@ -164,14 +154,9 @@ class _MainScreenState extends State<MainScreen> {
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(
-  icon: Icon(Icons.home_outlined),
-  selectedIcon: Icon(Icons.home),
-  label: 'Accueil',
-),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
-            label: 'Chat',
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Accueil',
           ),
           NavigationDestination(
             icon: Icon(Icons.upload_file_outlined),
@@ -189,11 +174,6 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Recos',
           ),
           NavigationDestination(
-            icon: Icon(Icons.attach_money_outlined),
-            selectedIcon: Icon(Icons.attach_money),
-            label: 'Salaire',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
             label: 'Profil',
@@ -205,7 +185,7 @@ class _MainScreenState extends State<MainScreen> {
 }
 
 // ============================================================
-// APP STATE (Provider global)
+// APP STATE
 // ============================================================
 class AppState extends ChangeNotifier {
   Profile? _profile;
@@ -214,7 +194,17 @@ class AppState extends ChangeNotifier {
   SalaryPrediction? salaryPrediction;
   Map<String, dynamic>? skillGap;
 
+  List<JobRecommendation> _favorites = [];
+  List<Map<String, dynamic>> _analysisHistory = [];
+
   Profile? get profile => _profile;
+  List<JobRecommendation> get favorites => _favorites;
+  List<Map<String, dynamic>> get analysisHistory => _analysisHistory;
+
+  AppState() {
+    _loadFavorites();
+    _loadHistory();
+  }
 
   void setProfile(Profile p) {
     _profile = p;
@@ -238,6 +228,71 @@ class AppState extends ChangeNotifier {
 
   void setSkillGap(Map<String, dynamic> s) {
     skillGap = s;
+    notifyListeners();
+  }
+
+  // ==================== FAVORIS ====================
+  Future<void> _loadFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString('favorites');
+    if (data != null) {
+      final List<dynamic> list = jsonDecode(data);
+      _favorites = list.map((e) => JobRecommendation.fromJson(e)).toList();
+      notifyListeners();
+    }
+  }
+
+  Future<void> _saveFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString(
+      'favorites',
+      jsonEncode(_favorites.map((e) => e.toJson()).toList()),
+    );
+  }
+
+  void toggleFavorite(JobRecommendation job) {
+    final index = _favorites.indexWhere((j) => j.jobId == job.jobId);
+    if (index >= 0) {
+      _favorites.removeAt(index);
+    } else {
+      _favorites.add(job);
+    }
+    _saveFavorites();
+    notifyListeners();
+  }
+
+  bool isFavorite(String jobId) {
+    return _favorites.any((j) => j.jobId == jobId);
+  }
+
+  // ==================== HISTORIQUE ====================
+  Future<void> _loadHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString('analysis_history');
+    if (data != null) {
+      _analysisHistory = List<Map<String, dynamic>>.from(jsonDecode(data));
+      notifyListeners();
+    }
+  }
+
+  Future<void> _saveHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('analysis_history', jsonEncode(_analysisHistory));
+  }
+
+  void addAnalysisToHistory(Profile profile) {
+    _analysisHistory.add({
+      'name': profile.name,
+      'skills': profile.skills,
+      'date': DateTime.now().toIso8601String(),
+    });
+    _saveHistory();
+    notifyListeners();
+  }
+
+  void clearHistory() {
+    _analysisHistory.clear();
+    _saveHistory();
     notifyListeners();
   }
 

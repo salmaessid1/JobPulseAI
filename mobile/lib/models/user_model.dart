@@ -53,3 +53,39 @@ class ChatMessage {
     );
   }
 }
+// lib/models/user_model.dart (AJOUTER cette classe à la fin du fichier existant)
+class Conversation {
+  final String id;
+  String title;
+  List<ChatMessage> messages;
+  bool pinned;
+  DateTime updatedAt;
+
+  Conversation({
+    required this.id,
+    required this.title,
+    required this.messages,
+    this.pinned = false,
+    DateTime? updatedAt,
+  }) : updatedAt = updatedAt ?? DateTime.now();
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'messages': messages.map((m) => m.toJson()).toList(),
+    'pinned': pinned,
+    'updated_at': updatedAt.toIso8601String(),
+  };
+
+  factory Conversation.fromJson(Map<String, dynamic> json) {
+    return Conversation(
+      id: json['id'] ?? '',
+      title: json['title'] ?? 'Nouvelle conversation',
+      messages: (json['messages'] as List<dynamic>? ?? [])
+          .map((e) => ChatMessage.fromJson(e))
+          .toList(),
+      pinned: json['pinned'] ?? false,
+      updatedAt: DateTime.tryParse(json['updated_at'] ?? '') ?? DateTime.now(),
+    );
+  }
+}

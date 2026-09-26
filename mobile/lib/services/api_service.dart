@@ -2,29 +2,14 @@
 // ignore_for_file: avoid_print
 
 import 'dart:convert';
-import 'dart:io' show File, Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show File;
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import '../models/job_models.dart';
+import '../config.dart';
+
 class ApiService {
-  // ============================================================
-  // Détection automatique de la plateforme
-  // ============================================================
-  static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://127.0.0.1:8000';
-    } else if (Platform.isAndroid) {
-      // ⚠️ TÉLÉPHONE PHYSIQUE : utiliser l'IP de votre PC
-      return 'http://192.168.1.100:8000';
-      // (10.0.2.2 ne fonctionne QUE sur l'émulateur Android)
-    } else if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-      return 'http://127.0.0.1:8000';
-    } else if (Platform.isIOS) {
-      return 'http://localhost:8000';
-    }
-    return 'http://127.0.0.1:8000';
-  }
+  static String get baseUrl => Config.baseUrl;
 
   final http.Client _client = http.Client();
 
@@ -77,17 +62,24 @@ class ApiService {
   Future<List<JobRecommendation>> getRecommendations(Profile profile) async {
     final uri = Uri.parse('$baseUrl/recommendations/');
     final payload = jsonEncode({'profile': profile.toJson(), 'top_n': 10});
+    print('📤 POST $uri');
+    print('📤 Payload: $payload');
+
     final response = await _client.post(
       uri,
       headers: {'Content-Type': 'application/json'},
       body: payload,
     );
+
+    print('📨 Status: ${response.statusCode}');
+    print('📄 Body: ${response.body}');
+
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => JobRecommendation.fromJson(e)).toList();
     } else {
       throw Exception(
-        'Erreur lors des recommandations: ${response.statusCode}',
+        'Erreur ${response.statusCode}: ${response.body}',
       );
     }
   }
@@ -136,7 +128,7 @@ class ApiService {
   }
 }
 
-// Extension pour sérialiser Profile (utilisée dans les appels)
+// Extension pour sérialiser Profile
 extension ProfileJson on Profile {
   Map<String, dynamic> toJson() {
     return {

@@ -15,7 +15,6 @@ class SkillResult {
   }
 }
 
-// lib/models/job_models.dart
 class Profile {
   final String name;
   final List<String> skills;
@@ -43,7 +42,6 @@ class Profile {
     );
   }
 }
-
 
 class MatchResult {
   final double score;
@@ -95,6 +93,16 @@ class JobRecommendation {
       missingSkills: List<String>.from(json['missing_skills'] ?? []),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'job_id': jobId,
+        'title': title,
+        'company': company,
+        'location': location,
+        'score': score,
+        'common_skills': commonSkills,
+        'missing_skills': missingSkills,
+      };
 }
 
 class SalaryPrediction {
