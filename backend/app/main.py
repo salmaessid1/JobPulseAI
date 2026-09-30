@@ -8,11 +8,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes import cv, matching, skill_gap, recommendations, salary, jobs, stats
 from app.database import init_db
 from app.routes import history
-from app.routes import semantic
 from app.routes.semantic import router as semantic_router
 from dotenv import load_dotenv
 load_dotenv()
 from app.routes import chatbot,conversations,auth
+# Pré-charger Sentence-BERT (au démarrage)
+try:
+    from sentence_transformers import SentenceTransformer
+    print("🔄 Pré-chargement Sentence-BERT...")
+    _semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
+    print("✅ Sentence-BERT prêt")
+except Exception as e:
+    print(f"⚠️ Sentence-BERT non pré-chargé : {e}")
+    
 # Après la création de l'app FastAPI
 
 app = FastAPI(
@@ -48,7 +56,6 @@ app.include_router(recommendations.router)
 app.include_router(salary.router)
 app.include_router(jobs.router)
 app.include_router(stats.router)
-app.include_router(semantic.router)
 app.include_router(semantic_router)
 @app.get("/")
 async def root():

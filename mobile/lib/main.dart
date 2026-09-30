@@ -1,57 +1,100 @@
 // lib/main.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:jobpulseai_mobile/screens/notifications_screen.dart';
+import 'package:jobpulseai_mobile/services/notification_service.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'services/user_profile_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/cv_screen.dart';
 import 'screens/matching_screen.dart';
 import 'screens/recommendations_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/favorites_screen.dart';
+import 'screens/history_screen.dart';
+import 'screens/support_screen.dart';
 import 'screens/auth/login_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';   // ✅ INDISPENSABLE
 
 import 'services/auth_service.dart';
+import 'l10n/translations.dart';
 import 'models/job_models.dart';
 import 'models/user_model.dart';
+import 'services/biometric_service.dart';
 
-// ============================================================
-// POINT D'ENTRÉE
-// ============================================================
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await NotificationService.load().timeout(const Duration(seconds: 3));
+  } catch (e) {
+    debugPrint('⚠️ Échec chargement notifications : $e');
+  }
+
   runApp(
     ChangeNotifierProvider(
-      create: (_) => AppState(),
+      create: (_) => AppState()..init(),
       child: const JobPulseApp(),
     ),
   );
 }
 
-// ============================================================
-// APPLICATION PRINCIPALE
-// ============================================================
 class JobPulseApp extends StatelessWidget {
   const JobPulseApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+
+    // ✅ Sécuriser la locale : 'fr' par défaut si vide
+    final lang = appState.language.isEmpty ? 'fr' : appState.language;
+
     return MaterialApp(
       title: 'JobPulseAI',
       debugShowCheckedModeBanner: false,
+      themeMode: appState.themeMode,
       theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.light,
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFF7C5CFF),
+          secondary: Color(0xFF4FD1C5),
+        ),
+      ),
+      darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
         colorScheme: const ColorScheme.dark(
           primary: Color(0xFF7C5CFF),
           secondary: Color(0xFF4FD1C5),
         ),
-        fontFamily: 'Inter',
       ),
+
+      // ✅ LOCALISATION COMPLÈTE
+      locale: Locale(lang),
+      supportedLocales: const [
+        Locale('fr', 'FR'),
+        Locale('en', 'US'),
+        Locale('ar', 'SA'),
+        Locale('es', 'ES'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+
       home: const AuthGate(),
+      routes: {
+        '/favorites': (_) => const FavoritesScreen(),
+        '/history': (_) => const HistoryScreen(),
+        '/support': (_) => const SupportScreen(),
+        '/notifications': (_) => const NotificationsScreen(),
+      },
     );
   }
 }
-
 // ============================================================
 // AUTH GATE
 // ============================================================
@@ -81,54 +124,33 @@ class _AuthGateState extends State<AuthGate> {
     });
   }
 
-  void _onAuthSuccess() {
-    _checkAuth();
-  }
+  void _onAuthSuccess() => _checkAuth();
 
   void _onLogout() {
-    setState(() {
-      _user = null;
-    });
+    setState(() => _user = null);
     _checkAuth();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Chargement...'),
-            ],
-          ),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-
     if (_user == null) {
       return LoginScreen(onLoginSuccess: _onAuthSuccess);
     }
-
     return MainScreen(user: _user!, onLogout: _onLogout);
   }
 }
 
 // ============================================================
-// ÉCRAN PRINCIPAL
+// MAIN SCREEN
 // ============================================================
 class MainScreen extends StatefulWidget {
   final User user;
   final VoidCallback onLogout;
 
-  const MainScreen({
-    super.key,
-    required this.user,
-    required this.onLogout,
-  });
+  const MainScreen({super.key, required this.user, required this.onLogout});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -139,6 +161,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = Provider.of<AppState>(context);
     final screens = [
       const HomeScreen(),
       const CvScreen(),
@@ -152,31 +175,31 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Accueil',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: t.t('home'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.upload_file_outlined),
-            selectedIcon: Icon(Icons.upload_file),
-            label: 'CV',
+            icon: const Icon(Icons.upload_file_outlined),
+            selectedIcon: const Icon(Icons.upload_file),
+            label: t.t('cv'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.compare_arrows_outlined),
-            selectedIcon: Icon(Icons.compare_arrows),
-            label: 'Matching',
+            icon: const Icon(Icons.compare_arrows_outlined),
+            selectedIcon: const Icon(Icons.compare_arrows),
+            label: t.t('matching'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.recommend_outlined),
-            selectedIcon: Icon(Icons.recommend),
-            label: 'Recos',
+            icon: const Icon(Icons.recommend_outlined),
+            selectedIcon: const Icon(Icons.recommend),
+            label: t.t('recos'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profil',
+            icon: const Icon(Icons.person_outline),
+            selectedIcon: const Icon(Icons.person),
+            label: t.t('profile'),
           ),
         ],
       ),
@@ -197,13 +220,70 @@ class AppState extends ChangeNotifier {
   List<JobRecommendation> _favorites = [];
   List<Map<String, dynamic>> _analysisHistory = [];
 
+  // ✅ Nouveaux états persistants
+  ThemeMode _themeMode = ThemeMode.dark;
+  String _language = 'fr';
+  bool _notificationsEnabled = true;
+  bool _twoFactorEnabled = false;
+  bool _biometricEnabled = false;
+
   Profile? get profile => _profile;
   List<JobRecommendation> get favorites => _favorites;
   List<Map<String, dynamic>> get analysisHistory => _analysisHistory;
+  ThemeMode get themeMode => _themeMode;
+  String get language => _language;
+  bool get notificationsEnabled => _notificationsEnabled;
+  bool get twoFactorEnabled => _twoFactorEnabled;
+  bool get biometricEnabled => _biometricEnabled;
 
-  AppState() {
-    _loadFavorites();
-    _loadHistory();
+  /// Traduction : t('home') → "Accueil"
+  String t(String key) => AppTranslations.tr(_language, key);
+
+  Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+    _themeMode =
+        (prefs.getBool('dark_mode') ?? true) ? ThemeMode.dark : ThemeMode.light;
+    _language = prefs.getString('language') ?? 'fr';
+    _notificationsEnabled = prefs.getBool('notifications') ?? true;
+    _twoFactorEnabled = prefs.getBool('two_factor') ?? false;
+    _biometricEnabled = prefs.getBool('biometric') ?? false;
+
+    // ✅ Synchroniser dès le démarrage
+    await NotificationService.setEnabled(_notificationsEnabled);
+
+    await _loadFavorites();
+    await _loadHistory();
+    notifyListeners();
+  }
+
+// Dans AppState
+  Future<void> reloadUserProfile() async {
+    final p = await UserProfileService.load();
+    if (p.fullName.isNotEmpty) {
+      // Met à jour l'utilisateur si un profil existe
+      notifyListeners();
+    }
+  }
+
+  // dans AppState
+  Future<bool> setBiometricEnabled(bool enabled) async {
+    if (enabled) {
+      // Vérifie que la biométrie est disponible
+      final available = await BiometricService.isAvailable();
+      if (!available) {
+        return false;
+      }
+      // Demande l'authentification pour activer
+      final auth = await BiometricService.authenticate(
+        reason: 'Authentifiez-vous pour activer la biométrie',
+      );
+      if (!auth) return false;
+    }
+    _biometricEnabled = enabled;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('biometric', enabled);
+    return true;
   }
 
   void setProfile(Profile p) {
@@ -231,6 +311,43 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ==================== THÈME ====================
+  Future<void> setDarkMode(bool enabled) async {
+    _themeMode = enabled ? ThemeMode.dark : ThemeMode.light;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('dark_mode', enabled);
+  }
+
+  // ==================== LANGUE ====================
+  Future<void> setLanguage(String lang) async {
+    _language = lang;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('language', lang);
+  }
+
+  // ==================== NOTIFICATIONS ====================
+// Dans AppState
+  Future<void> setNotificationsEnabled(bool enabled) async {
+    _notificationsEnabled = enabled;
+    notifyListeners();
+
+    // ✅ Synchroniser avec NotificationService
+    await NotificationService.setEnabled(enabled);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notifications', enabled);
+  }
+
+  // ==================== 2FA ====================
+  Future<void> setTwoFactorEnabled(bool enabled) async {
+    _twoFactorEnabled = enabled;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('two_factor', enabled);
+  }
+
   // ==================== FAVORIS ====================
   Future<void> _loadFavorites() async {
     final prefs = await SharedPreferences.getInstance();
@@ -238,7 +355,6 @@ class AppState extends ChangeNotifier {
     if (data != null) {
       final List<dynamic> list = jsonDecode(data);
       _favorites = list.map((e) => JobRecommendation.fromJson(e)).toList();
-      notifyListeners();
     }
   }
 
@@ -261,9 +377,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool isFavorite(String jobId) {
-    return _favorites.any((j) => j.jobId == jobId);
-  }
+  bool isFavorite(String jobId) => _favorites.any((j) => j.jobId == jobId);
 
   // ==================== HISTORIQUE ====================
   Future<void> _loadHistory() async {
@@ -271,7 +385,6 @@ class AppState extends ChangeNotifier {
     final data = prefs.getString('analysis_history');
     if (data != null) {
       _analysisHistory = List<Map<String, dynamic>>.from(jsonDecode(data));
-      notifyListeners();
     }
   }
 

@@ -720,21 +720,27 @@ def _fetch_silent(endpoint, timeout=30):
         return None
 
 
-
+def semantic_match_api(cv_text: str, job_text: str):
+    """Appelle l'API de matching sémantique."""
+    return api_call(
+        "POST",
+        "/semantic/match",
+        json={"cv_text": cv_text, "job_text": job_text},
+        timeout=60,
+    )
 def api_call(method, endpoint, **kwargs):
     url = f"{API_BASE_URL}{endpoint}"
+    timeout = kwargs.pop("timeout", 90)  # 90s par défaut
     try:
-        # Cas multipart (upload fichier) : utiliser requests sans proxy
         if "files" in kwargs:
             files = kwargs["files"]
             resp = requests.post(
-                url, files=files, timeout=30,
+                url, files=files, timeout=timeout,
                 proxies={"http": None, "https": None},
             )
             resp.raise_for_status()
             return resp.json()
 
-        # Cas JSON : utiliser urllib sans proxy
         data = None
         headers = {}
         if "json" in kwargs:
@@ -742,7 +748,7 @@ def api_call(method, endpoint, **kwargs):
             headers["Content-Type"] = "application/json"
 
         req = urllib.request.Request(url, data=data, method=method.upper(), headers=headers)
-        with _no_proxy_opener.open(req, timeout=20) as resp:
+        with _no_proxy_opener.open(req, timeout=timeout) as resp:
             return json.loads(resp.read().decode('utf-8'))
 
     except urllib.error.HTTPError as e:
@@ -757,7 +763,7 @@ def api_call(method, endpoint, **kwargs):
         print(f"🔴 Erreur : {type(e).__name__} - {e}")
         st.error(f"❌ Erreur : {e}")
         return None
-
+    
 @st.cache_data(ttl=60, show_spinner=False)
 def get_global_stats():
     return _fetch_silent("/stats/global")
@@ -819,10 +825,10 @@ def skill_gap_api(profile, job_text):
 
 def recommendations_api(profile, top_n=10):
     payload = {"profile": profile, "top_n": top_n}
-    return api_call("POST", "/recommendations/", json=payload, timeout=15)
+    return api_call("POST", "/recommendations/", json=payload, timeout=90)
 
 def salary_api(features):
-    return api_call("POST", "/salary/predict", json=features, timeout=10)
+    return api_call("POST", "/salary/predict", json=features, timeout=60)
 
 def compute_cv_score(profile):
     score = 0
@@ -842,7 +848,6 @@ def compute_cv_score(profile):
     return min(score, 100)
 
 PLOTLY_TEMPLATE = "plotly_dark" if st.session_state.dark_mode else "plotly_white"
-CHART_COLORWAY = ["#8b5cf6", "#ec4899", "#3b82f6", "#f5a524", "#f43f5e", "#22c55e"]
 def chatbot_api(question, profile=None, history=None):
     return api_call("POST", "/chatbot/", json={
         "question": question,
@@ -854,7 +859,6 @@ def style_fig(fig, height=320):
         template=PLOTLY_TEMPLATE,
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        colorway=CHART_COLORWAY,
         font=dict(family="Inter, sans-serif", color="#9a9ab8" if st.session_state.dark_mode else "#525268"),
         margin=dict(l=10, r=10, t=40, b=10),
         height=height,
@@ -1168,10 +1172,10 @@ with st.sidebar:
     # ========== 6. MENU ==========
     st.markdown(f'<p class="sidebar-section-label">📋 {tr("menu")}</p>', unsafe_allow_html=True)
     page_labels = [tr("page_home"), tr("page_market"), tr("page_cv"),
-                   tr("page_matching"), tr("page_recommendations"), tr("page_salary"),
+                   tr("page_matching"), "🧠 Matching Sémantique", tr("page_recommendations"), tr("page_salary"),
                    tr("page_comparator"), tr("page_career"), tr("page_assistant"), tr("page_report")]
     pages_internal = ["🏠 Accueil", "📈 Marché", "📄 CV",
-                      "🤝 Matching", "🎯 Recommandations", "💰 Salaire",
+                      "🤝 Matching","🧠 Matching Sémantique",  "🎯 Recommandations", "💰 Salaire",
                       "📊 Comparateur", "📊 Analyse carrière", "🤖 Assistant", "📄 Rapport"]
     current_idx = pages_internal.index(st.session_state.current_page) if st.session_state.current_page in pages_internal else 0
     selected_label = st.radio("Navigation", page_labels, index=current_idx,
@@ -1432,7 +1436,7 @@ def page_accueil():
         with st.container(border=True):
             st.markdown(f"#### {tr('hires_by_dept')}")
             hires = [28, 35, 42, 18]
-            fig2 = px.bar(x=depts, y=hires, color=depts, color_discrete_sequence=CHART_COLORWAY)
+            fig2 = px.bar(x=depts, y=hires, color=depts)
             fig2.update_layout(showlegend=False)
             st.plotly_chart(style_fig(fig2, 260), use_container_width=True)
 
@@ -1440,7 +1444,7 @@ def page_accueil():
             st.markdown(f"#### {tr('correspondence_dist')}")
             labels = ['Excellente (92%)', 'Modérée (36%)', 'Bonne (16%)', 'Faible (5%)']
             values_pie = [92.67, 36, 16, 5]
-            fig4 = px.pie(values=values_pie, names=labels, hole=0.55, color_discrete_sequence=CHART_COLORWAY)
+            fig4 = px.pie(values=values_pie, names=labels, hole=0.55)
             st.plotly_chart(style_fig(fig4, 260), use_container_width=True)
 
     with col_right:
@@ -1556,8 +1560,7 @@ def page_marche():
         st.plotly_chart(style_fig(fig), use_container_width=True)
 
     if levels:
-        fig = px.pie(values=list(levels.values()), names=list(levels.keys()), title="Niveaux d'expérience",
-                     color_discrete_sequence=CHART_COLORWAY)
+        fig = px.pie(values=list(levels.values()), names=list(levels.keys()), title="Niveaux d'expérience")
         st.plotly_chart(style_fig(fig), use_container_width=True)
 
 
@@ -1668,6 +1671,273 @@ def page_matching():
         with st.expander("📤 Exporter"):
             st.download_button("📥 JSON", data=json.dumps(result, indent=2),
                                file_name="matching_result.json", mime="application/json")
+
+
+def _load_random_example():
+    """Callback : charge un exemple aléatoire dans le session_state."""
+    import random
+    examples = [
+        (
+            "Développeur logiciel spécialisé en programmation Python.",
+            "Nous recrutons un ingénieur pour coder en Python.",
+        ),
+        (
+            "Expert en analyse de données et statistiques appliquées.",
+            "Poste de Data Scientist pour modéliser des données massives.",
+        ),
+        (
+            "Chef cuisinier avec 10 ans en restauration gastronomique.",
+            "Ingénieur DevOps Kubernetes Docker AWS.",
+        ),
+    ]
+    ex = random.choice(examples)
+    st.session_state.sem_cv = ex[0]
+    st.session_state.sem_job = ex[1]
+
+def page_semantic_matching():
+    """Page de démonstration du matching sémantique Deep Learning."""
+    st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    st.markdown(
+        '<div class="main-header">🧠 Matching Sémantique (Deep Learning)</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "Comparez le matching classique (mots-clés) avec le matching sémantique "
+        "basé sur Sentence-BERT (Transformer pré-entraîné)."
+    )
+
+    # ============================================================
+    # FORMULAIRE
+    # ============================================================
+    col1, col2 = st.columns(2)
+    with col1:
+        cv_text = st.text_area(
+            "📄 Texte du CV",
+            height=150,
+            value="Data scientist avec 3 ans d'expérience. "
+                  "Maîtrise de Python, TensorFlow, scikit-learn, SQL. "
+                  "Expérience en machine learning et deep learning.",
+            key="sem_cv",
+        )
+    with col2:
+        job_text = st.text_area(
+            "📋 Description du poste",
+            height=150,
+            value="Nous recherchons un ingénieur Python expérimenté en "
+                  "deep learning, PyTorch et modèles de NLP. "
+                  "Maîtrise de SQL requise.",
+            key="sem_job",
+        )
+
+    col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
+    with col_btn1:
+        analyze_btn = st.button(
+            "🔬 Analyser (Sémantique)",
+            use_container_width=True,
+            type="primary",
+        )
+    with col_btn2:
+        compare_btn = st.button(
+            "📊 Comparer Classique vs Sémantique",
+            use_container_width=True,
+        )
+    with col_btn3:
+        st.button(
+            "🎲 Exemple aléatoire",
+            use_container_width=True,
+            on_click=_load_random_example,   # ✅ Callback
+        )
+    
+
+    # ============================================================
+    # ANALYSE SÉMANTIQUE
+    # ============================================================
+    if analyze_btn:
+        if not cv_text or not job_text:
+            st.warning("⚠️ Remplissez les deux champs.")
+            return
+
+        with st.spinner("🧠 Analyse sémantique en cours..."):
+            result = semantic_match_api(cv_text, job_text)
+
+        if not result:
+            st.error("❌ Erreur de communication avec l'API.")
+            return
+
+        st.success("✅ Analyse terminée !")
+        st.markdown("---")
+
+        # ============================================
+        # GAUGES DE SCORE
+        # ============================================
+        col_a, col_b, col_c = st.columns(3)
+
+        with col_a:
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=result.get("final_score", 0),
+                title={"text": "🎯 Score final"},
+                gauge={
+                    "axis": {"range": [0, 100]},
+                    "bar": {"color": "#8b5cf6"},
+                    "steps": [
+                        {"range": [0, 40], "color": "rgba(244,63,94,0.2)"},
+                        {"range": [40, 70], "color": "rgba(245,165,36,0.2)"},
+                        {"range": [70, 100], "color": "rgba(34,197,94,0.2)"},
+                    ],
+                },
+            ))
+            st.plotly_chart(style_fig(fig, 220), use_container_width=True)
+
+        with col_b:
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=result.get("skill_score", 0),
+                title={"text": "🔧 Score compétences"},
+                gauge={
+                    "axis": {"range": [0, 100]},
+                    "bar": {"color": "#3b82f6"},
+                },
+            ))
+            st.plotly_chart(style_fig(fig, 220), use_container_width=True)
+
+        with col_c:
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=result.get("semantic_score", 0),
+                title={"text": "🧠 Score sémantique"},
+                gauge={
+                    "axis": {"range": [0, 100]},
+                    "bar": {"color": "#ec4899"},
+                },
+            ))
+            st.plotly_chart(style_fig(fig, 220), use_container_width=True)
+
+        # ============================================
+        # BAR CHART COMPARATIF
+        # ============================================
+        with st.container(border=True):
+            st.markdown("#### 📊 Comparaison des scores")
+            categories = ["Compétences", "Sémantique", "Final"]
+            values = [
+                result.get("skill_score", 0),
+                result.get("semantic_score", 0),
+                result.get("final_score", 0),
+            ]
+            colors = ["#3b82f6", "#ec4899", "#8b5cf6"]
+            fig = go.Figure(data=[
+                go.Bar(x=categories, y=values, marker_color=colors,
+                       text=[f"{v:.1f}%" for v in values], textposition="auto")
+            ])
+            fig.update_layout(yaxis_range=[0, 100], showlegend=False)
+            st.plotly_chart(style_fig(fig, 300), use_container_width=True)
+
+        # ============================================
+        # COMPÉTENCES
+        # ============================================
+        col_x, col_y = st.columns(2)
+        with col_x:
+            st.markdown("#### ✅ Compétences communes")
+            common = result.get("common_skills", [])
+            if common:
+                for s in common:
+                    st.markdown(f"`✓ {s}`")
+            else:
+                st.caption("Aucune")
+
+        with col_y:
+            st.markdown("#### ❌ Compétences manquantes")
+            missing = result.get("missing_skills", [])
+            if missing:
+                for s in missing:
+                    st.markdown(f"`✗ {s}`")
+            else:
+                st.caption("Aucune")
+
+    # ============================================================
+    # COMPARAISON CLASSIQUE VS SÉMANTIQUE
+    # ============================================================
+    if compare_btn:
+        if not cv_text or not job_text:
+            st.warning("⚠️ Remplissez les deux champs.")
+            return
+
+        with st.spinner("🔬 Comparaison en cours..."):
+            # Matching classique
+            classic = match_api(cv_text, job_text)
+            # Matching sémantique
+            semantic = semantic_match_api(cv_text, job_text)
+
+        if not classic and not semantic:
+            st.error("❌ Erreur de communication avec l'API.")
+            return
+
+        classic_score = classic.get("score", 0) if classic else 0
+        semantic_score = semantic.get("final_score", 0) if semantic else 0
+
+        st.markdown("---")
+        st.markdown("### ⚖️ Matching Classique vs Sémantique")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric(
+                label="🔧 Matching Classique (mots-clés)",
+                value=f"{classic_score:.1f}%",
+                delta=f"{classic_score - semantic_score:+.1f}% vs Sémantique",
+                delta_color="inverse",
+            )
+        with col2:
+            st.metric(
+                label="🧠 Matching Sémantique (Deep Learning)",
+                value=f"{semantic_score:.1f}%",
+                delta=f"{semantic_score - classic_score:+.1f}% vs Classique",
+            )
+
+        # Bar chart comparatif
+        fig = go.Figure(data=[
+            go.Bar(
+                name="Classique",
+                x=["Score"],
+                y=[classic_score],
+                marker_color="#ec4899",
+                text=[f"{classic_score:.1f}%"],
+                textposition="auto",
+            ),
+            go.Bar(
+                name="Sémantique",
+                x=["Score"],
+                y=[semantic_score],
+                marker_color="#8b5cf6",
+                text=[f"{semantic_score:.1f}%"],
+                textposition="auto",
+            ),
+        ])
+        fig.update_layout(
+            barmode="group",
+            yaxis_range=[0, 100],
+            title="Comparaison des deux approches",
+        )
+        st.plotly_chart(style_fig(fig, 400), use_container_width=True)
+
+        # Détails
+        with st.expander("🔍 Voir les détails"):
+            st.json({
+                "classique": classic,
+                "sémantique": semantic,
+            })
+
+    # ============================================================
+    # EXPLICATION PÉDAGOGIQUE
+    # ============================================================
+    st.markdown("---")
+    with st.expander("📚 Comment ça marche ?"):
+        st.markdown("""
+        **Sentence-BERT** est un modèle Transformer pré-entraîné qui transforme 
+        un texte en un vecteur de 384 dimensions. Deux textes sémantiquement 
+        proches auront des vecteurs proches (similarité cosinus élevée).
+
+        **Formule du score final :**
+        """)
 
 def page_recommandations():
     st.caption(f"📅 Dernière mise à jour : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
@@ -2267,15 +2537,17 @@ def page_rapport():
         return
 
     recs = []
-    salary_pred = None
+    salary_pred = {"predicted_salary": 95000, "min_range": 85000, "max_range": 105000}
+
     if profile:
         try:
-            recs_result = recommendations_api(profile, top_n=3)
-            if recs_result and isinstance(recs_result, list):
-                recs = recs_result
-        except:
-            pass
-        salary_pred = {"predicted_salary": 95000, "min_range": 85000, "max_range": 105000}
+            with st.spinner("Chargement des recommandations..."):
+                recs_result = recommendations_api(profile, top_n=3)
+                if recs_result and isinstance(recs_result, list):
+                    recs = recs_result
+        except Exception as e:
+            st.warning(f"⚠️ Recommandations non chargées : {e}")
+            st.info("ℹ️ Le rapport sera généré sans les recommandations.")
 
     score = compute_cv_score(profile)
     st.info(f"📊 Score du CV : **{score}/100**")
@@ -2308,6 +2580,8 @@ elif page == "📄 CV":
     page_cv()
 elif page == "🤝 Matching":
     page_matching()
+elif page == "🧠 Matching Sémantique":
+    page_semantic_matching()
 elif page == "🎯 Recommandations":
     page_recommandations()
 elif page == "💰 Salaire":

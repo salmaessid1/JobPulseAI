@@ -2,10 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
+import '../widgets/notification_bell.dart';
 import 'chat_screen.dart';
 import 'salary_screen.dart';
-import 'favorites_screen.dart';
-import 'history_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -20,6 +19,7 @@ class HomeScreen extends StatelessWidget {
         title: const Text('JobPulseAI'),
         centerTitle: true,
         elevation: 0,
+        actions: const [NotificationBell()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -108,7 +108,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // Grille des fonctionnalités (Skill Gap retiré)
+            // Grille des fonctionnalités (Support et Notifications retirés)
             const Text(
               '🚀 Fonctionnalités',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -147,20 +147,14 @@ class HomeScreen extends StatelessWidget {
                   icon: Icons.favorite,
                   label: 'Favoris',
                   color: Colors.red,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const FavoritesScreen()),
-                  ),
+                  onTap: () => Navigator.pushNamed(context, '/favorites'),
                 ),
                 _buildFeatureCard(
                   context,
                   icon: Icons.history,
                   label: 'Historique',
                   color: Colors.blue,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const HistoryScreen()),
-                  ),
+                  onTap: () => Navigator.pushNamed(context, '/history'),
                 ),
               ],
             ),

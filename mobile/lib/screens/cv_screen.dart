@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../models/job_models.dart';   // ← AJOUT de l'import
 import '../main.dart';
-
+import '../services/notification_service.dart';
 class CvScreen extends StatefulWidget {
   const CvScreen({super.key});
 
@@ -60,17 +60,25 @@ class _CvScreenState extends State<CvScreen> {
     });
 
     try {
-      final profile = await _apiService.analyzeCv(_selectedFile!);
-      if (!mounted) return;
-      Provider.of<AppState>(context, listen: false).setProfile(profile);
-      Provider.of<AppState>(context, listen: false).addAnalysisToHistory(profile);
-      setState(() {
-        _statusMessage =
+  final profile = await _apiService.analyzeCv(_selectedFile!);
+  if (!mounted) return;
+  Provider.of<AppState>(context, listen: false).setProfile(profile);
+  Provider.of<AppState>(context, listen: false).addAnalysisToHistory(profile);
+
+  // ✅ Notification automatique
+  await NotificationService.add(
+    title: '📄 CV analysé',
+    body: '${profile.skills.length} compétences détectées dans votre CV.',
+    type: 'analysis',
+  );
+
+  setState(() {
+    _statusMessage =
         '✅ CV analysé ! ${profile.skills.length} compétences trouvées.';
-        _success = true;
-        _isLoading = false;
-      });
-    } catch (e) {
+    _success = true;
+    _isLoading = false;
+  });
+} catch (e) {
       if (!mounted) return;
       setState(() {
         _statusMessage = '❌ Erreur : $e';
