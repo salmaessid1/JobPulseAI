@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes import cv, matching, skill_gap, recommendations, salary, jobs, stats
 from app.database import init_db
 from app.routes import history
+from app.routes import semantic
+from app.routes.semantic import router as semantic_router
 from dotenv import load_dotenv
 load_dotenv()
 from app.routes import chatbot,conversations,auth
@@ -46,7 +48,8 @@ app.include_router(recommendations.router)
 app.include_router(salary.router)
 app.include_router(jobs.router)
 app.include_router(stats.router)
-
+app.include_router(semantic.router)
+app.include_router(semantic_router)
 @app.get("/")
 async def root():
     return {"message": "Welcome to JobPulseAI API"}
